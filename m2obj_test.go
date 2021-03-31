@@ -14,21 +14,21 @@ func TestError(t *testing.T) {
 	}
 	testData := []TestData{
 		{
-			IndexOverflowErr{
+			indexOverflowErr{
 				Index: 10,
 			},
 			"no such index[10]",
 		},
 		{
-			InvalidKeyStrErr("key"),
+			invalidKeyStrErr("key"),
 			"invalid key string: key",
 		},
 		{
-			UnknownTypeErr("key"),
+			unknownTypeErr("key"),
 			"the key {key} has an unknown ObjectType",
 		},
 		{
-			InvalidTypeErr("key"),
+			invalidTypeErr("key"),
 			"the key {key} has an invalid ObjectType",
 		},
 	}

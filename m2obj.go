@@ -7,29 +7,29 @@ import (
 
 // Err Definition
 
-type IndexOverflowErr struct {
+type indexOverflowErr struct {
 	Index int
 }
 
-func (e IndexOverflowErr) Error() string {
+func (e indexOverflowErr) Error() string {
 	return "no such index[" + strconv.Itoa(e.Index) + "]"
 }
 
-type InvalidKeyStrErr string
+type invalidKeyStrErr string
 
-func (e InvalidKeyStrErr) Error() string {
+func (e invalidKeyStrErr) Error() string {
 	return "invalid key string: " + string(e)
 }
 
-type UnknownTypeErr string
+type unknownTypeErr string
 
-func (e UnknownTypeErr) Error() string {
+func (e unknownTypeErr) Error() string {
 	return "the key {" + string(e) + "} has an unknown ObjectType"
 }
 
-type InvalidTypeErr string
+type invalidTypeErr string
 
-func (e InvalidTypeErr) Error() string {
+func (e invalidTypeErr) Error() string {
 	return "the key {" + string(e) + "} has an invalid ObjectType"
 }
 

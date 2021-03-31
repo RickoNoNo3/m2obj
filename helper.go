@@ -42,7 +42,7 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 				mapObj := *tObj.val.(*groupData)
 				if i != len(keys)-1 { // is a middle key
 					if arrCheckIndexFormat(keys[i+1]) { // is Array
-						panic(InvalidKeyStrErr(keyStr))
+						panic(invalidKeyStrErr(keyStr))
 					} else { // is Group
 						mapObj[key] = New(groupData{})
 					}
@@ -51,7 +51,7 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 				}
 				tObj = mapObj[key]
 			} else { // not found and panic
-				panic(InvalidKeyStrErr(keyStr))
+				panic(invalidKeyStrErr(keyStr))
 			}
 		case *arrayData:
 			if index, err := tObj.arrCheckIndexKey(key, keyStr); err == nil {
@@ -60,7 +60,7 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 				panic(err)
 			}
 		default:
-			panic(InvalidTypeErr(key))
+			panic(invalidTypeErr(key))
 		}
 	}
 	return tObj

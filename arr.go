@@ -20,17 +20,17 @@ func (o *Object) arrCheckIndexKey(key, keyStr string) (index int, err error) {
 	reg := regexp.MustCompile(`\[(\d+)]`)
 
 	if !reg.MatchString(key) { // the key doesn't be matched as [number]
-		err = InvalidKeyStrErr(keyStr)
+		err = invalidKeyStrErr(keyStr)
 		return
 	} else { // matched
 		index, err = strconv.Atoi(reg.FindStringSubmatch(key)[1])
 		if err != nil { // the key can not trans to an Integer
-			err = InvalidKeyStrErr(keyStr)
+			err = invalidKeyStrErr(keyStr)
 			return
 		} else { // gotten an integer as the index
 			arr := *o.val.(*arrayData)
 			if len(arr) <= index { // the index overflows from the arr
-				err = IndexOverflowErr{
+				err = indexOverflowErr{
 					Index: index,
 				}
 				return
@@ -47,7 +47,7 @@ func (o *Object) ArrPush(value interface{}) (err error) {
 		*o.val.(*arrayData) = append(*o.val.(*arrayData), New(getDeepestValue(value)))
 		return nil
 	default:
-		return InvalidTypeErr("")
+		return invalidTypeErr("")
 	}
 }
 
@@ -57,7 +57,7 @@ func (o *Object) ArrPop() (err error) {
 		*o.val.(*arrayData) = (*o.val.(*arrayData))[:len(*o.val.(*arrayData))-1]
 		return nil
 	default:
-		return InvalidTypeErr("")
+		return invalidTypeErr("")
 	}
 }
 
@@ -67,7 +67,7 @@ func (o *Object) ArrSet(index int, value interface{}) (err error) {
 		(*o.val.(*arrayData))[index] = New(getDeepestValue(value))
 		return nil
 	default:
-		return InvalidTypeErr("")
+		return invalidTypeErr("")
 	}
 }
 
@@ -77,7 +77,7 @@ func (o *Object) ArrGet(index int) (obj *Object, err error) {
 	case *arrayData:
 		return (*o.val.(*arrayData))[index], nil
 	default:
-		return nil, InvalidTypeErr("")
+		return nil, invalidTypeErr("")
 	}
 }
 
@@ -90,7 +90,7 @@ func (o *Object) ArrInsert(index int, value interface{}) (err error) {
 		arr = *o.val.(*arrayData)
 		// overflow
 		if index < 0 || index >= len(arr) {
-			return IndexOverflowErr{index}
+			return indexOverflowErr{index}
 		}
 		// before
 		arrBefore = arrayData{}
@@ -108,7 +108,7 @@ func (o *Object) ArrInsert(index int, value interface{}) (err error) {
 		*o.val.(*arrayData) = arrRes
 		return nil
 	default:
-		return InvalidTypeErr("")
+		return invalidTypeErr("")
 	}
 }
 
@@ -121,7 +121,7 @@ func (o *Object) ArrRemove(index int) (err error) {
 		arr = *o.val.(*arrayData)
 		// overflow
 		if index < 0 || index >= len(arr) {
-			return IndexOverflowErr{index}
+			return indexOverflowErr{index}
 		}
 		// before
 		arrBefore = arrayData{}
@@ -138,7 +138,7 @@ func (o *Object) ArrRemove(index int) (err error) {
 		*o.val.(*arrayData) = arrRes
 		return nil
 	default:
-		return InvalidTypeErr("")
+		return invalidTypeErr("")
 	}
 }
 
@@ -150,7 +150,7 @@ func (o *Object) ArrForeach(do func(index int, obj *Object)) (err error) {
 		}
 		return nil
 	default:
-		return InvalidTypeErr("")
+		return invalidTypeErr("")
 	}
 }
 
@@ -159,6 +159,6 @@ func (o *Object) ArrLen() (int, error) {
 	case *arrayData:
 		return len(*o.val.(*arrayData)), nil
 	default:
-		return -1, InvalidTypeErr("")
+		return -1, invalidTypeErr("")
 	}
 }
