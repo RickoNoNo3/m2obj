@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"m2obj"
+	"github.com/rickonono3/m2obj"
 )
 
 type JsonDataFormatter struct {
