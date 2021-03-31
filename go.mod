@@ -1,1 +1,5 @@
-module "m2obj"
+module m2obj
+
+go 1.15
+
+require github.com/stretchr/testify v1.7.0
