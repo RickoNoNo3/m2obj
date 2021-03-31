@@ -1,4 +1,4 @@
-module rickonono3/m2obj
+module github.com/rickonono3/m2obj
 
 go 1.15
 
