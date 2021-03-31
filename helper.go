@@ -23,7 +23,7 @@ func split(keyStr string) (keys []string) {
 //
 // The func panic at:
 //     1. the key is not found and `createLost` is false
-//     2. the key is middle of `keyStr` and has an object type neither *GroupData nor *ArrayData
+//     2. the key is middle of `keyStr` and has an object type neither *groupData nor *arrayData
 //     3. the key behind an Array Object key doesn't satisfy the rule with ArrayName.[index]
 func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 	tObj := current
@@ -35,16 +35,16 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 		// Once the code runs here, the tObj means the parent of the param key.
 		// After this switch, the tObj will be the object self assigned by the param key.
 		switch tObj.val.(type) {
-		case *GroupData:
-			if next, ok := (*tObj.val.(*GroupData))[key]; ok { // the key exists
+		case *groupData:
+			if next, ok := (*tObj.val.(*groupData))[key]; ok { // the key exists
 				tObj = next
 			} else if createLost { // not exists but can be created
-				mapObj := *tObj.val.(*GroupData)
+				mapObj := *tObj.val.(*groupData)
 				if i != len(keys)-1 { // is a middle key
 					if arrCheckIndexFormat(keys[i+1]) { // is Array
 						panic(InvalidKeyStrErr(keyStr))
 					} else { // is Group
-						mapObj[key] = New(GroupData{})
+						mapObj[key] = New(groupData{})
 					}
 				} else { // is the last key
 					mapObj[key] = New(nil)
@@ -53,9 +53,9 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 			} else { // not found and panic
 				panic(InvalidKeyStrErr(keyStr))
 			}
-		case *ArrayData:
+		case *arrayData:
 			if index, err := tObj.arrCheckIndexKey(key, keyStr); err == nil {
-				tObj = (*tObj.val.(*ArrayData))[index]
+				tObj = (*tObj.val.(*arrayData))[index]
 			} else {
 				panic(err)
 			}
@@ -66,6 +66,11 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 	return tObj
 }
 
+// The process to make sure the param v is one of [*groupData, *arrayData, UnknownValue].
+// All other recognizable types will be transform as:
+//   Object and *Object get their value and trans again
+//   groupData and arrayData trans to the pointer to them.
+//   Group and Array trans to the object-safe types (groupData and arrayData) to them
 func getDeepestValue(v interface{}) interface{} {
 	tv := v
 	for {
@@ -74,18 +79,38 @@ func getDeepestValue(v interface{}) interface{} {
 			tv = tv.(Object).val
 		case *Object:
 			tv = tv.(*Object).val
-		case GroupData:
-			group := tv.(GroupData)
+		case groupData:
+			group := tv.(groupData)
 			return &group
-		case *GroupData:
-			return tv.(*GroupData)
-		case ArrayData:
-			arr := tv.(ArrayData)
+		case *groupData:
+			return tv.(*groupData)
+		case arrayData:
+			arr := tv.(arrayData)
 			return &arr
-		case *ArrayData:
-			return tv.(*ArrayData)
+		case *arrayData:
+			return tv.(*arrayData)
+		case Group:
+			tv = transGroupToGroupData(tv.(Group))
+		case Array:
+			tv = transArrayToArrayData(tv.(Array))
 		default:
 			return tv
 		}
 	}
+}
+
+func transArrayToArrayData(array Array) *arrayData {
+	data := New(arrayData{})
+	for _, v := range array {
+		_ = data.ArrPush(getDeepestValue(v))
+	}
+	return data.val.(*arrayData)
+}
+
+func transGroupToGroupData(group Group) *groupData {
+	data := New(groupData{})
+	for k, v := range group {
+		_ = data.Set(k, getDeepestValue(v))
+	}
+	return data.val.(*groupData)
 }

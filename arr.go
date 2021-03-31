@@ -28,7 +28,7 @@ func (o *Object) arrCheckIndexKey(key, keyStr string) (index int, err error) {
 			err = InvalidKeyStrErr(keyStr)
 			return
 		} else { // gotten an integer as the index
-			arr := *o.val.(*ArrayData)
+			arr := *o.val.(*arrayData)
 			if len(arr) <= index { // the index overflows from the arr
 				err = IndexOverflowErr{
 					Index: index,
@@ -43,8 +43,8 @@ func (o *Object) arrCheckIndexKey(key, keyStr string) (index int, err error) {
 
 func (o *Object) ArrPush(value interface{}) (err error) {
 	switch o.val.(type) {
-	case *ArrayData:
-		*o.val.(*ArrayData) = append(*o.val.(*ArrayData), New(getDeepestValue(value)))
+	case *arrayData:
+		*o.val.(*arrayData) = append(*o.val.(*arrayData), New(getDeepestValue(value)))
 		return nil
 	default:
 		return InvalidTypeErr("")
@@ -53,8 +53,8 @@ func (o *Object) ArrPush(value interface{}) (err error) {
 
 func (o *Object) ArrPop() (err error) {
 	switch o.val.(type) {
-	case *ArrayData:
-		*o.val.(*ArrayData) = (*o.val.(*ArrayData))[:len(*o.val.(*ArrayData))-1]
+	case *arrayData:
+		*o.val.(*arrayData) = (*o.val.(*arrayData))[:len(*o.val.(*arrayData))-1]
 		return nil
 	default:
 		return InvalidTypeErr("")
@@ -63,8 +63,8 @@ func (o *Object) ArrPop() (err error) {
 
 func (o *Object) ArrSet(index int, value interface{}) (err error) {
 	switch o.val.(type) {
-	case *ArrayData:
-		(*o.val.(*ArrayData))[index] = New(getDeepestValue(value))
+	case *arrayData:
+		(*o.val.(*arrayData))[index] = New(getDeepestValue(value))
 		return nil
 	default:
 		return InvalidTypeErr("")
@@ -74,8 +74,8 @@ func (o *Object) ArrSet(index int, value interface{}) (err error) {
 // An alias of `*Object.Get("[index]")`
 func (o *Object) ArrGet(index int) (obj *Object, err error) {
 	switch o.val.(type) {
-	case *ArrayData:
-		return (*o.val.(*ArrayData))[index], nil
+	case *arrayData:
+		return (*o.val.(*arrayData))[index], nil
 	default:
 		return nil, InvalidTypeErr("")
 	}
@@ -83,29 +83,29 @@ func (o *Object) ArrGet(index int) (obj *Object, err error) {
 
 func (o *Object) ArrInsert(index int, value interface{}) (err error) {
 	switch o.val.(type) {
-	case *ArrayData:
+	case *arrayData:
 		var (
-			arr, arrBefore, arrAfter, arrRes ArrayData
+			arr, arrBefore, arrAfter, arrRes arrayData
 		)
-		arr = *o.val.(*ArrayData)
+		arr = *o.val.(*arrayData)
 		// overflow
 		if index < 0 || index >= len(arr) {
 			return IndexOverflowErr{index}
 		}
 		// before
-		arrBefore = ArrayData{}
+		arrBefore = arrayData{}
 		if index > 0 {
 			arrBefore = append(arrBefore, arr[:index]...)
 		}
 		// after
-		arrAfter = ArrayData{}
+		arrAfter = arrayData{}
 		if index < len(arr)-1 {
 			arrAfter = append(arrAfter, arr[index:]...)
 		}
 		// generate
 		arrRes = append(arrBefore, New(getDeepestValue(value)))
 		arrRes = append(arrRes, arrAfter...)
-		*o.val.(*ArrayData) = arrRes
+		*o.val.(*arrayData) = arrRes
 		return nil
 	default:
 		return InvalidTypeErr("")
@@ -114,28 +114,28 @@ func (o *Object) ArrInsert(index int, value interface{}) (err error) {
 
 func (o *Object) ArrRemove(index int) (err error) {
 	switch o.val.(type) {
-	case *ArrayData:
+	case *arrayData:
 		var (
-			arr, arrBefore, arrAfter, arrRes ArrayData
+			arr, arrBefore, arrAfter, arrRes arrayData
 		)
-		arr = *o.val.(*ArrayData)
+		arr = *o.val.(*arrayData)
 		// overflow
 		if index < 0 || index >= len(arr) {
 			return IndexOverflowErr{index}
 		}
 		// before
-		arrBefore = ArrayData{}
+		arrBefore = arrayData{}
 		if index > 0 {
 			arrBefore = append(arrBefore, arr[:index]...)
 		}
 		// after
-		arrAfter = ArrayData{}
+		arrAfter = arrayData{}
 		if index < len(arr)-1 {
 			arrAfter = append(arrAfter, arr[index+1:]...)
 		}
 		// generate
 		arrRes = append(arrBefore, arrAfter...)
-		*o.val.(*ArrayData) = arrRes
+		*o.val.(*arrayData) = arrRes
 		return nil
 	default:
 		return InvalidTypeErr("")
@@ -144,8 +144,8 @@ func (o *Object) ArrRemove(index int) (err error) {
 
 func (o *Object) ArrForeach(do func(index int, obj *Object)) (err error) {
 	switch o.val.(type) {
-	case *ArrayData:
-		for i, obj := range *o.ValArr() {
+	case *arrayData:
+		for i, obj := range *o.valArr() {
 			do(i, obj)
 		}
 		return nil
@@ -156,8 +156,8 @@ func (o *Object) ArrForeach(do func(index int, obj *Object)) (err error) {
 
 func (o *Object) ArrLen() (int, error) {
 	switch o.val.(type) {
-	case *ArrayData:
-		return len(*o.val.(*ArrayData)), nil
+	case *arrayData:
+		return len(*o.val.(*arrayData)), nil
 	default:
 		return -1, InvalidTypeErr("")
 	}

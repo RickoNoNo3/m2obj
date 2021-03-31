@@ -64,11 +64,11 @@ func TestNewAndStaticize(t *testing.T) {
 		},
 		// New Group
 		{
-			New(GroupData{}),
+			New(groupData{}),
 			map[string]interface{}{},
 		},
 		{
-			New(GroupData{
+			New(groupData{
 				"a": New(1),
 				"b": New("2"),
 				"c": New(true),
@@ -79,18 +79,72 @@ func TestNewAndStaticize(t *testing.T) {
 				"c": true,
 			},
 		},
+		{
+			New(Group{
+				"a": New(1),
+				"b": New("2"),
+				"c": New(true),
+			}),
+			map[string]interface{}{
+				"a": 1,
+				"b": "2",
+				"c": true,
+			},
+		},
+		{
+			New(Group{
+				"a": 1,
+				"b": "2",
+				"c": true,
+			}),
+			map[string]interface{}{
+				"a": 1,
+				"b": "2",
+				"c": true,
+			},
+		},
 		// New Array
 		{
-			New(ArrayData{}),
+			New(arrayData{}),
 			map[string]interface{}{
 				"list": []interface{}{},
 			},
 		},
 		{
-			New(ArrayData{
+			New(arrayData{
 				0: New(1),
 				1: New("2"),
 				3: New(true),
+			}),
+			map[string]interface{}{
+				"list": []interface{}{
+					0: 1,
+					1: "2",
+					2: nil,
+					3: true,
+				},
+			},
+		},
+		{
+			New(Array{
+				0: New(1),
+				1: New("2"),
+				3: New(true),
+			}),
+			map[string]interface{}{
+				"list": []interface{}{
+					0: 1,
+					1: "2",
+					2: nil,
+					3: true,
+				},
+			},
+		},
+		{
+			New(Array{
+				0: 1,
+				1: "2",
+				3: true,
 			}),
 			map[string]interface{}{
 				"list": []interface{}{
@@ -137,12 +191,12 @@ func TestNewAndStaticize(t *testing.T) {
 }
 
 func TestObject_SetGetRemove(t *testing.T) {
-	obj := New(GroupData{
+	obj := New(groupData{
 		"a": New(Object{val: 3}),
-		"b": New(ArrayData{
+		"b": New(arrayData{
 			New(1),
 			New("2"),
-			New(GroupData{
+			New(groupData{
 				"map": NewFromMap(map[string]interface{}{
 					"a": "1",
 					"b": 2,
@@ -194,12 +248,12 @@ func TestObject_SetGetRemove(t *testing.T) {
 	assert.NoError(t, obj.Set("b.[2].nil", nil))
 	assert.NoError(t, obj.Set("b.[2].string", "string"))
 	assert.NoError(t, obj.Set("b.[2].int", int64(2000)))
-	assert.NoError(t, obj.Set("b.[2].group", New(GroupData{
+	assert.NoError(t, obj.Set("b.[2].group", New(groupData{
 		"a": New(1),
 		"b": New(New(2)),
 		"c": New(New(New(3))),
 	})))
-	assert.NoError(t, obj.Set("b.[2].array", ArrayData{
+	assert.NoError(t, obj.Set("b.[2].array", arrayData{
 		New("哈哈"),
 		New("吼吼"),
 		New("嘿嘿"),
@@ -254,7 +308,7 @@ func TestObject_SetGetRemove(t *testing.T) {
 }
 
 func TestObject_SetGetRemove2(t *testing.T) {
-	obj := New(GroupData{})
+	obj := New(groupData{})
 	assert.NoError(t, obj.Set("aa.bb.cc.dd.ee.ff", 1))
 	assert.NoError(t, obj.Set("aa...bb....cc..dd.ee...ff", 2))
 	assert.Equal(t, 2, obj.MustGet("aa..bb..cc..dd..ee..ff").ValInt())
@@ -267,7 +321,7 @@ func TestObject_SetGetRemove2(t *testing.T) {
 }
 
 func TestObject_Vals(t *testing.T) {
-	obj := New(GroupData{})
+	obj := New(groupData{})
 	assert.NoError(t, obj.Set("1", int(1)))
 	assert.Equal(t, int(1), obj.MustGet("1").ValInt())
 	assert.NoError(t, obj.Set("8", int8(1)))
@@ -286,11 +340,11 @@ func TestObject_Vals(t *testing.T) {
 	assert.Equal(t, true, obj.MustGet("bool").ValBool())
 	assert.NoError(t, obj.Set("str", "str"))
 	assert.Equal(t, "str", obj.MustGet("str").ValStr())
-	assert.NoError(t, obj.Set("arr", ArrayData{
+	assert.NoError(t, obj.Set("arr", arrayData{
 		New(1),
 		New("2"),
 	}))
-	arr := obj.MustGet("arr").ValArr()
+	arr := obj.MustGet("arr").valArr()
 	assert.Equal(t, 1, (*arr)[0].ValInt())
 	assert.Equal(t, "2", (*arr)[1].ValStr())
 	type Tmp struct {
@@ -312,7 +366,7 @@ func TestObject_Vals(t *testing.T) {
 		obj.ValStr()
 	})
 	assert.Panics(t, func() {
-		obj.ValArr()
+		obj.valArr()
 	})
 	assert.Equal(t, map[string]interface{}{
 		"val": 1,
@@ -321,11 +375,11 @@ func TestObject_Vals(t *testing.T) {
 }
 
 func TestObject_Clone(t *testing.T) {
-	obj := New(GroupData{
-		"arr": New(ArrayData{
+	obj := New(groupData{
+		"arr": New(arrayData{
 			New("hello"),
 			New(2),
-			New(GroupData{
+			New(groupData{
 				"1": New(1),
 				"2": New("2"),
 				"3": New(true),
@@ -357,11 +411,11 @@ func TestObject_Clone(t *testing.T) {
 }
 
 func TestArrs(t *testing.T) {
-	obj := New(GroupData{
-		"arr": New(ArrayData{
+	obj := New(groupData{
+		"arr": New(arrayData{
 			New("hello"),
 			New(2),
-			New(GroupData{
+			New(groupData{
 				"1": New(1),
 			}),
 		}),

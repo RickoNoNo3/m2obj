@@ -38,8 +38,10 @@ type Object struct {
 	val interface{}
 }
 
-type GroupData map[string]*Object
-type ArrayData []*Object
+type Group map[string]interface{}
+type Array []interface{}
+type groupData map[string]*Object
+type arrayData []*Object
 
 type DataFormatter interface {
 	Marshal(obj *Object) (objStr string, err error)
@@ -118,8 +120,8 @@ func (o *Object) Remove(keyStr string) bool {
 			parentObj = o
 		}
 		switch parentObj.val.(type) {
-		case *GroupData:
-			delete(*parentObj.val.(*GroupData), key)
+		case *groupData:
+			delete(*parentObj.val.(*groupData), key)
 			return true
 		default:
 			return false
@@ -178,19 +180,19 @@ func (o *Object) ValFloat64() float64 {
 // Returns a pointer to the Object's core array val to achieve more advanced operations on it.
 //
 // This func is the only one which has writable access to the val of an Object. So be careful.
-func (o *Object) ValArr() *ArrayData {
-	return o.val.(*ArrayData)
+func (o *Object) valArr() *arrayData {
+	return o.val.(*arrayData)
 }
 
 // staticize without the wrapper, for different object type, it returns different type:
-//     Group: map[string]interface{}
-//     Array: []interface{}
-//     Value: interface{}
+//     group: map[string]interface{}
+//     array: []interface{}
+//     value: interface{}
 func (o *Object) staticize() interface{} {
 	switch o.val.(type) {
-	case *GroupData: // Group
+	case *groupData: // Group
 		m := make(map[string]interface{})
-		for k, v := range *o.val.(*GroupData) {
+		for k, v := range *o.val.(*groupData) {
 			if v == nil {
 				m[k] = nil
 			} else {
@@ -198,9 +200,9 @@ func (o *Object) staticize() interface{} {
 			}
 		}
 		return m
-	case *ArrayData: // Array
-		m := make([]interface{}, len(*o.val.(*ArrayData)))
-		for i, v := range *o.val.(*ArrayData) {
+	case *arrayData: // Array
+		m := make([]interface{}, len(*o.val.(*arrayData)))
+		for i, v := range *o.val.(*arrayData) {
 			if v == nil {
 				m[i] = nil
 			} else {
@@ -219,9 +221,9 @@ func (o *Object) staticize() interface{} {
 
 func (o *Object) Staticize() map[string]interface{} {
 	switch o.val.(type) {
-	case *GroupData: // Group
+	case *groupData: // Group
 		return o.staticize().(map[string]interface{})
-	case *ArrayData: // Array
+	case *arrayData: // Array
 		return map[string]interface{}{
 			"list": o.staticize().([]interface{}),
 		}
@@ -234,15 +236,15 @@ func (o *Object) Staticize() map[string]interface{} {
 
 func (o *Object) Clone() (newObj *Object) {
 	switch o.val.(type) {
-	case *GroupData: // Group
-		newObj = New(GroupData{})
-		for k, obj := range *o.val.(*GroupData) {
+	case *groupData: // Group
+		newObj = New(groupData{})
+		for k, obj := range *o.val.(*groupData) {
 			_ = newObj.Set(k, obj.Clone())
 		}
 		return
-	case *ArrayData: // Array
-		newObj = New(ArrayData{})
-		for _, obj := range *o.val.(*ArrayData) {
+	case *arrayData: // Array
+		newObj = New(arrayData{})
+		for _, obj := range *o.val.(*arrayData) {
 			_ = newObj.ArrPush(obj.val)
 		}
 		return
@@ -252,7 +254,6 @@ func (o *Object) Clone() (newObj *Object) {
 	}
 }
 
-// TODO: 在新建Group和Array时减少New出现的频率, 把*Object类型限定放宽为interface{}, 然后由代码自己处理成*Object
 func New(value interface{}) *Object {
 	t := getDeepestValue(value)
 	return &Object{
@@ -261,13 +262,13 @@ func New(value interface{}) *Object {
 }
 
 func NewFromMap(m map[string]interface{}) *Object {
-	obj := New(GroupData{})
+	obj := New(groupData{})
 	for k, v := range m {
 		switch v.(type) {
 		case map[string]interface{}:
 			_ = obj.Set(k, NewFromMap(v.(map[string]interface{})))
 		case []interface{}:
-			arr := New(ArrayData{})
+			arr := New(arrayData{})
 			for _, v2 := range v.([]interface{}) {
 				_ = arr.ArrPush(v2)
 			}
