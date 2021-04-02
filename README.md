@@ -307,7 +307,7 @@ func main() {
 | `SetIfHas(keyStr string, value interface{}) (err error)`    | Set value when only the child exists.                        |
 | `SetIfNotHas(keyStr string, value interface{}) (err error)` | Set value when only the child doesn't exist.                 |
 | `Get(keyStr string) (obj *Object, err error)`               | Get the value of a child of the object assigned by the `keyStr`. If it exists, returns `obj, nil`, or else, returns `nil, err`. |
-| `MustGet(keyStr string) (obj *Object)`                      | Like `Get`, but panic when the child doesn't exist.          |
+| `MustGet(keyStr string) (obj *Object)`                      | Similar to `Get`, but panic when the child doesn't exist.          |
 | `Has(keyStr string) bool`                                   | Returns if the child assigned by the `keyStr` exists.        |
 | `Remove(keyStr string) bool`                                | Remove a child (and its children as well) assigned by the `keyStr`. If the removing is successful or the child doesn't exist at all, return `true`, or else, return `false`. |
 | `SetVal(value interface{})`                                 | Set value of the object itself, not for its child.           |
