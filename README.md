@@ -278,7 +278,7 @@ func main() {
   var obj = m2obj.New(m2obj.Group{
     "A": m2obj.Group{
       "B": m2obj.Array{
-        Group{
+        m2obj.Group{
           "C": "I am here!",
         },
       },
