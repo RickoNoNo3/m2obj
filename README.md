@@ -243,7 +243,7 @@ func main() {
 
 ## Docs
 
-> For the detailed documents and APIs of M2Obj, See [THIS](https://github.com/rickonono3/m2obj).
+> For the detailed documents and APIs of M2Obj, See [THIS](https://pkg.go.dev/github.com/rickonono3/m2obj).
 
 ### Data Types
 
