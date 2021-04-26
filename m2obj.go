@@ -24,18 +24,29 @@ func (e invalidKeyStrErr) Error() string {
 type unknownTypeErr string
 
 func (e unknownTypeErr) Error() string {
-	return "the key {" + string(e) + "} has an unknown ObjectType"
+	if string(e) == "" {
+		return "unknown ObjectType"
+	} else {
+		return "the key {" + string(e) + "} has an unknown ObjectType"
+	}
 }
 
 type invalidTypeErr string
 
 func (e invalidTypeErr) Error() string {
-	return "the key {" + string(e) + "} has an invalid ObjectType"
+	if string(e) == "" {
+		return "invalid ObjectType"
+	} else {
+		return "the key {" + string(e) + "} has an invalid ObjectType"
+	}
 }
 
 // Type Definition
+
 type Object struct {
-	val interface{}
+	val      interface{}
+	parent   *Object
+	onChange func() // used by fileSyncer
 }
 
 type Group map[string]interface{}
@@ -43,14 +54,17 @@ type Array []interface{}
 type groupData map[string]*Object
 type arrayData []*Object
 
-type DataFormatter interface {
-	Marshal(obj *Object) (objStr string, err error)
-	UnMarshal(objStr string) (obj *Object, err error)
-	SaveToFile(obj *Object) (err error)
-	LoadFromFile() (obj *Object, err error)
-}
-
 // Method Definition
+
+func (o *Object) callOnChange() {
+	tObj := o
+	for tObj != nil {
+		if tObj.onChange != nil {
+			tObj.onChange()
+		}
+		tObj = tObj.parent
+	}
+}
 
 func (o *Object) Set(keyStr string, value interface{}) (err error) {
 	defer func() { // recover any panic to error and return the error
@@ -58,8 +72,8 @@ func (o *Object) Set(keyStr string, value interface{}) (err error) {
 			err = pan.(error)
 		}
 	}()
-	obj := splitAndDig(o, keyStr, true)
-	obj.val = getDeepestValue(value)
+	obj := splitAndDig(o, keyStr, true, true)
+	obj.SetVal(value)
 	return
 }
 
@@ -83,7 +97,7 @@ func (o *Object) Get(keyStr string) (obj *Object, err error) {
 			err = pan.(error)
 		}
 	}()
-	obj = splitAndDig(o, keyStr, false)
+	obj = splitAndDig(o, keyStr, false, true)
 	return
 }
 
@@ -114,7 +128,7 @@ func (o *Object) Remove(keyStr string) bool {
 			submatch := reg.FindStringSubmatch(keyStr)
 			key = submatch[2]
 			parentKeyStr := submatch[1]
-			parentObj = splitAndDig(o, parentKeyStr, false)
+			parentObj = splitAndDig(o, parentKeyStr, false, true)
 		} else {
 			key = keyStr
 			parentObj = o
@@ -122,6 +136,7 @@ func (o *Object) Remove(keyStr string) bool {
 		switch parentObj.val.(type) {
 		case *groupData:
 			delete(*parentObj.val.(*groupData), key)
+			o.callOnChange()
 			return true
 		default:
 			return false
@@ -129,59 +144,6 @@ func (o *Object) Remove(keyStr string) bool {
 	} else {
 		return true // Not exists, regarded as remove successfully.
 	}
-}
-
-func (o *Object) SetVal(value interface{}) {
-	o.val = getDeepestValue(value)
-}
-
-func (o *Object) Val() interface{} {
-	return o.val
-}
-
-func (o *Object) ValStr() string {
-	return o.val.(string)
-}
-
-func (o *Object) ValBool() bool {
-	return o.val.(bool)
-}
-
-func (o *Object) ValInt() int {
-	return o.val.(int)
-}
-
-func (o *Object) ValInt8() int8 {
-	return o.val.(int8)
-}
-
-func (o *Object) ValInt16() int16 {
-	return o.val.(int16)
-}
-
-func (o *Object) ValInt32() int32 {
-	return o.val.(int32)
-}
-
-func (o *Object) ValInt64() int64 {
-	return o.val.(int64)
-}
-
-func (o *Object) ValFloat32() float32 {
-	return o.val.(float32)
-}
-
-func (o *Object) ValFloat64() float64 {
-	return o.val.(float64)
-}
-
-// !!! DANGEROUS
-//
-// Returns a pointer to the Object's core array val to achieve more advanced operations on it.
-//
-// This func is the only one which has writable access to the val of an Object. So be careful.
-func (o *Object) valArr() *arrayData {
-	return o.val.(*arrayData)
 }
 
 // staticize without the wrapper, for different object type, it returns different type:
@@ -193,7 +155,7 @@ func (o *Object) staticize() interface{} {
 	case *groupData: // Group
 		m := make(map[string]interface{})
 		for k, v := range *o.val.(*groupData) {
-			if v == nil {
+			if v == nil || v.Val() == nil {
 				m[k] = nil
 			} else {
 				m[k] = v.staticize()
@@ -203,7 +165,7 @@ func (o *Object) staticize() interface{} {
 	case *arrayData: // Array
 		m := make([]interface{}, len(*o.val.(*arrayData)))
 		for i, v := range *o.val.(*arrayData) {
-			if v == nil {
+			if v == nil || v.Val() == nil {
 				m[i] = nil
 			} else {
 				m[i] = v.staticize()
@@ -211,7 +173,7 @@ func (o *Object) staticize() interface{} {
 		}
 		return m
 	default: // Value
-		if o == nil {
+		if o == nil || o.Val() == nil {
 			return nil
 		} else {
 			return o.val
@@ -237,45 +199,31 @@ func (o *Object) Staticize() map[string]interface{} {
 func (o *Object) Clone() (newObj *Object) {
 	switch o.val.(type) {
 	case *groupData: // Group
-		newObj = New(groupData{})
+		newObj = newWithParent(groupData{}, o.parent)
 		for k, obj := range *o.val.(*groupData) {
 			_ = newObj.Set(k, obj.Clone())
 		}
 		return
 	case *arrayData: // Array
-		newObj = New(arrayData{})
+		newObj = newWithParent(arrayData{}, o.parent)
 		for _, obj := range *o.val.(*arrayData) {
-			_ = newObj.ArrPush(obj.val)
+			_ = newObj.ArrPush(obj.Clone())
 		}
 		return
 	default: // Value
-		newObj = New(o.val)
+		newObj = newWithParent(o.val, o.parent)
 		return
 	}
 }
 
 func New(value interface{}) *Object {
-	t := getDeepestValue(value)
-	return &Object{
-		val: t,
-	}
+	return newWithParent(value, nil)
 }
 
-func NewFromMap(m map[string]interface{}) *Object {
-	obj := New(groupData{})
-	for k, v := range m {
-		switch v.(type) {
-		case map[string]interface{}:
-			_ = obj.Set(k, NewFromMap(v.(map[string]interface{})))
-		case []interface{}:
-			arr := New(arrayData{})
-			for _, v2 := range v.([]interface{}) {
-				_ = arr.ArrPush(v2)
-			}
-			_ = obj.Set(k, arr)
-		default:
-			_ = obj.Set(k, v)
-		}
+func newWithParent(value interface{}, parent *Object) *Object {
+	t := getDeepestValue(value)
+	return &Object{
+		val:    t,
+		parent: parent,
 	}
-	return obj
 }

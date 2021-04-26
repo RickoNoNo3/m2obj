@@ -25,7 +25,7 @@ func split(keyStr string) (keys []string) {
 //     1. the key is not found and `createLost` is false
 //     2. the key is middle of `keyStr` and has an object type neither *groupData nor *arrayData
 //     3. the key behind an Array Object key doesn't satisfy the rule with ArrayName.[index]
-func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
+func splitAndDig(current *Object, keyStr string, createLost bool, needCallOnChangeWhenCreateLost bool) *Object {
 	tObj := current
 	keys := split(keyStr)
 	for i, key := range keys {
@@ -44,10 +44,13 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 					if arrCheckIndexFormat(keys[i+1]) { // is Array
 						panic(invalidKeyStrErr(keyStr))
 					} else { // is Group
-						mapObj[key] = New(groupData{})
+						mapObj[key] = newWithParent(groupData{}, tObj)
 					}
 				} else { // is the last key
-					mapObj[key] = New(nil)
+					mapObj[key] = newWithParent(nil, tObj)
+				}
+				if needCallOnChangeWhenCreateLost {
+					current.callOnChange()
 				}
 				tObj = mapObj[key]
 			} else { // not found and panic
@@ -89,6 +92,10 @@ func getDeepestValue(v interface{}) interface{} {
 			return &arr
 		case *arrayData:
 			return tv.(*arrayData)
+		case map[string]interface{}:
+			tv = transGroupToGroupData(Group(tv.(map[string]interface{})))
+		case []interface{}:
+			tv = transArrayToArrayData(Array(tv.([]interface{})))
 		case Group:
 			tv = transGroupToGroupData(tv.(Group))
 		case Array:

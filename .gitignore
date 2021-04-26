@@ -1,6 +1,9 @@
+test.json
+
 # IDEA
 .idea
 *.iml
 
 # VSCODE
 .vscode
+

@@ -44,7 +44,8 @@ func (o *Object) arrCheckIndexKey(key, keyStr string) (index int, err error) {
 func (o *Object) ArrPush(value interface{}) (err error) {
 	switch o.val.(type) {
 	case *arrayData:
-		*o.val.(*arrayData) = append(*o.val.(*arrayData), New(getDeepestValue(value)))
+		*o.val.(*arrayData) = append(*o.val.(*arrayData), newWithParent(getDeepestValue(value), o))
+		o.callOnChange()
 		return nil
 	default:
 		return invalidTypeErr("")
@@ -55,6 +56,7 @@ func (o *Object) ArrPop() (err error) {
 	switch o.val.(type) {
 	case *arrayData:
 		*o.val.(*arrayData) = (*o.val.(*arrayData))[:len(*o.val.(*arrayData))-1]
+		o.callOnChange()
 		return nil
 	default:
 		return invalidTypeErr("")
@@ -64,14 +66,15 @@ func (o *Object) ArrPop() (err error) {
 func (o *Object) ArrSet(index int, value interface{}) (err error) {
 	switch o.val.(type) {
 	case *arrayData:
-		(*o.val.(*arrayData))[index] = New(getDeepestValue(value))
+		(*o.val.(*arrayData))[index] = newWithParent(getDeepestValue(value), o)
+		o.callOnChange()
 		return nil
 	default:
 		return invalidTypeErr("")
 	}
 }
 
-// An alias of `*Object.Get("[index]")`
+// ArrGet is an alias of `*Object.Get("[index]")`
 func (o *Object) ArrGet(index int) (obj *Object, err error) {
 	switch o.val.(type) {
 	case *arrayData:
@@ -103,9 +106,10 @@ func (o *Object) ArrInsert(index int, value interface{}) (err error) {
 			arrAfter = append(arrAfter, arr[index:]...)
 		}
 		// generate
-		arrRes = append(arrBefore, New(getDeepestValue(value)))
+		arrRes = append(arrBefore, newWithParent(getDeepestValue(value),o))
 		arrRes = append(arrRes, arrAfter...)
 		*o.val.(*arrayData) = arrRes
+		o.callOnChange()
 		return nil
 	default:
 		return invalidTypeErr("")
@@ -136,19 +140,62 @@ func (o *Object) ArrRemove(index int) (err error) {
 		// generate
 		arrRes = append(arrBefore, arrAfter...)
 		*o.val.(*arrayData) = arrRes
+		o.callOnChange()
 		return nil
 	default:
 		return invalidTypeErr("")
 	}
 }
 
-func (o *Object) ArrForeach(do func(index int, obj *Object)) (err error) {
+func (o *Object) ArrShift() (err error) {
+	return o.ArrRemove(0)
+}
+
+func (o *Object) ArrUnshift(value interface{}) (err error) {
+	return o.ArrInsert(0, value)
+}
+
+func (o *Object) ArrForeach(do func(index int, obj *Object) error) (err error) {
 	switch o.val.(type) {
 	case *arrayData:
-		for i, obj := range *o.valArr() {
-			do(i, obj)
+		for i, obj := range *o.val.(*arrayData) {
+			if err = do(i, obj); err != nil {
+				return
+			}
 		}
 		return nil
+	default:
+		return invalidTypeErr("")
+	}
+}
+
+// ArrPushArr Push all of elements in an ARRAY Object named o2 into the ARRAY Object
+func (o *Object) ArrPushArr(o2 *Object) (err error) {
+	switch o.val.(type) {
+	case *arrayData:
+		switch o2.val.(type) {
+		case *arrayData: // Group
+			newArr := o.Clone()
+			err = o2.ArrForeach(func(index int, obj *Object) error {
+				return newArr.ArrPush(obj)
+			})
+			if err == nil {
+				o.SetVal(newArr)
+			}
+			return
+		default:
+			return invalidTypeErr("")
+		}
+	default:
+		return invalidTypeErr("")
+	}
+}
+
+func (o *Object) ArrPushAll(values ...interface{}) (err error) {
+	switch o.val.(type) {
+	case *arrayData:
+		o2 := New(Array(values))
+		return o.ArrPushArr(o2)
 	default:
 		return invalidTypeErr("")
 	}
