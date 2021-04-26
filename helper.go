@@ -25,7 +25,7 @@ func split(keyStr string) (keys []string) {
 //     1. the key is not found and `createLost` is false
 //     2. the key is middle of `keyStr` and has an object type neither *groupData nor *arrayData
 //     3. the key behind an Array Object key doesn't satisfy the rule with ArrayName.[index]
-func splitAndDig(current *Object, keyStr string, createLost bool, needCallOnChangeWhenCreateLost bool) *Object {
+func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 	tObj := current
 	keys := split(keyStr)
 	for i, key := range keys {
@@ -44,13 +44,10 @@ func splitAndDig(current *Object, keyStr string, createLost bool, needCallOnChan
 					if arrCheckIndexFormat(keys[i+1]) { // is Array
 						panic(invalidKeyStrErr(keyStr))
 					} else { // is Group
-						mapObj[key] = newWithParent(groupData{}, tObj)
+						mapObj[key] = New(groupData{})
 					}
 				} else { // is the last key
-					mapObj[key] = newWithParent(nil, tObj)
-				}
-				if needCallOnChangeWhenCreateLost {
-					current.callOnChange()
+					mapObj[key] = New(nil)
 				}
 				tObj = mapObj[key]
 			} else { // not found and panic

@@ -44,7 +44,8 @@ func (o *Object) arrCheckIndexKey(key, keyStr string) (index int, err error) {
 func (o *Object) ArrPush(value interface{}) (err error) {
 	switch o.val.(type) {
 	case *arrayData:
-		*o.val.(*arrayData) = append(*o.val.(*arrayData), newWithParent(getDeepestValue(value), o))
+		*o.val.(*arrayData) = append(*o.val.(*arrayData), New(value))
+		o.buildParentLink(o.parent)
 		o.callOnChange()
 		return nil
 	default:
@@ -56,6 +57,7 @@ func (o *Object) ArrPop() (err error) {
 	switch o.val.(type) {
 	case *arrayData:
 		*o.val.(*arrayData) = (*o.val.(*arrayData))[:len(*o.val.(*arrayData))-1]
+		o.buildParentLink(o.parent)
 		o.callOnChange()
 		return nil
 	default:
@@ -66,7 +68,8 @@ func (o *Object) ArrPop() (err error) {
 func (o *Object) ArrSet(index int, value interface{}) (err error) {
 	switch o.val.(type) {
 	case *arrayData:
-		(*o.val.(*arrayData))[index] = newWithParent(getDeepestValue(value), o)
+		(*o.val.(*arrayData))[index] = New(value)
+		o.buildParentLink(o.parent)
 		o.callOnChange()
 		return nil
 	default:
@@ -106,9 +109,10 @@ func (o *Object) ArrInsert(index int, value interface{}) (err error) {
 			arrAfter = append(arrAfter, arr[index:]...)
 		}
 		// generate
-		arrRes = append(arrBefore, newWithParent(getDeepestValue(value),o))
+		arrRes = append(arrBefore, New(value))
 		arrRes = append(arrRes, arrAfter...)
 		*o.val.(*arrayData) = arrRes
+		o.buildParentLink(o.parent)
 		o.callOnChange()
 		return nil
 	default:
@@ -140,6 +144,7 @@ func (o *Object) ArrRemove(index int) (err error) {
 		// generate
 		arrRes = append(arrBefore, arrAfter...)
 		*o.val.(*arrayData) = arrRes
+		o.buildParentLink(o.parent)
 		o.callOnChange()
 		return nil
 	default:
@@ -160,9 +165,11 @@ func (o *Object) ArrForeach(do func(index int, obj *Object) error) (err error) {
 	case *arrayData:
 		for i, obj := range *o.val.(*arrayData) {
 			if err = do(i, obj); err != nil {
+				o.buildParentLink(o.parent)
 				return
 			}
 		}
+		o.buildParentLink(o.parent)
 		return nil
 	default:
 		return invalidTypeErr("")
@@ -181,6 +188,7 @@ func (o *Object) ArrPushArr(o2 *Object) (err error) {
 			})
 			if err == nil {
 				o.SetVal(newArr)
+				o.buildParentLink(o.parent)
 			}
 			return
 		default:
@@ -195,10 +203,12 @@ func (o *Object) ArrPushAll(values ...interface{}) (err error) {
 	switch o.val.(type) {
 	case *arrayData:
 		o2 := New(Array(values))
-		return o.ArrPushArr(o2)
+		err = o.ArrPushArr(o2)
+		o.buildParentLink(o.parent)
 	default:
 		return invalidTypeErr("")
 	}
+	return
 }
 
 func (o *Object) ArrLen() (int, error) {

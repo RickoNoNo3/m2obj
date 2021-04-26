@@ -5,9 +5,11 @@ func (o *Object) GroupForeach(do func(key string, obj *Object) error) (err error
 	case *groupData:
 		for k, obj := range *o.val.(*groupData) {
 			if err = do(k, obj); err != nil {
+				o.buildParentLink(o.parent)
 				return
 			}
 		}
+		o.buildParentLink(o.parent)
 		return nil
 	default:
 		return invalidTypeErr("")
@@ -54,6 +56,7 @@ func (o *Object) groupMerge(o2 *Object, forced bool, needCallOnChange bool) (err
 			})
 			if err == nil {
 				o.setVal(newObj, needCallOnChange)
+				o.buildParentLink(o.parent)
 			}
 			return
 		default: // Array or Value

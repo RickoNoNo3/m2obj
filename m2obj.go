@@ -66,14 +66,52 @@ func (o *Object) callOnChange() {
 	}
 }
 
+func (o *Object) Parent() *Object {
+	return o.parent
+}
+
+// 这里的调用可以优化，只有以下情况需要重新build
+//   初始化一个obj（初始化）
+//   从另一个obj中接入val，另一个obj有自身的parent关系（换子）
+//   对任意一个obj进行了直接赋值，含[key]和[index]（换父）
+func (o *Object) buildParentLink(parent *Object) {
+	o.parent = parent
+	switch o.val.(type) {
+	case *groupData:
+		grp := *o.val.(*groupData)
+		for k := range grp {
+			if grp[k] == nil {
+				continue
+			}
+			grp[k].parent = o
+			if grp[k].IsGroup() || grp[k].IsArray() {
+				grp[k].buildParentLink(o)
+			}
+		}
+	case *arrayData:
+		arr := *o.val.(*arrayData)
+		for i := range arr {
+			if arr[i] == nil {
+				continue
+			}
+			arr[i].parent = o
+			if arr[i].IsGroup() || arr[i].IsArray() {
+				arr[i].buildParentLink(o)
+			}
+		}
+	}
+}
+
 func (o *Object) Set(keyStr string, value interface{}) (err error) {
 	defer func() { // recover any panic to error and return the error
 		if pan := recover(); pan != nil {
 			err = pan.(error)
 		}
 	}()
-	obj := splitAndDig(o, keyStr, true, true)
+	obj := splitAndDig(o, keyStr, true)
 	obj.SetVal(value)
+	o.buildParentLink(o.parent)
+	o.callOnChange()
 	return
 }
 
@@ -97,7 +135,7 @@ func (o *Object) Get(keyStr string) (obj *Object, err error) {
 			err = pan.(error)
 		}
 	}()
-	obj = splitAndDig(o, keyStr, false, true)
+	obj = splitAndDig(o, keyStr, false)
 	return
 }
 
@@ -128,7 +166,7 @@ func (o *Object) Remove(keyStr string) bool {
 			submatch := reg.FindStringSubmatch(keyStr)
 			key = submatch[2]
 			parentKeyStr := submatch[1]
-			parentObj = splitAndDig(o, parentKeyStr, false, true)
+			parentObj = splitAndDig(o, parentKeyStr, false)
 		} else {
 			key = keyStr
 			parentObj = o
@@ -136,6 +174,7 @@ func (o *Object) Remove(keyStr string) bool {
 		switch parentObj.val.(type) {
 		case *groupData:
 			delete(*parentObj.val.(*groupData), key)
+			o.buildParentLink(o.parent)
 			o.callOnChange()
 			return true
 		default:
@@ -199,31 +238,28 @@ func (o *Object) Staticize() map[string]interface{} {
 func (o *Object) Clone() (newObj *Object) {
 	switch o.val.(type) {
 	case *groupData: // Group
-		newObj = newWithParent(groupData{}, o.parent)
+		newObj = New(groupData{})
 		for k, obj := range *o.val.(*groupData) {
 			_ = newObj.Set(k, obj.Clone())
 		}
-		return
 	case *arrayData: // Array
-		newObj = newWithParent(arrayData{}, o.parent)
+		newObj = New(arrayData{})
 		for _, obj := range *o.val.(*arrayData) {
 			_ = newObj.ArrPush(obj.Clone())
 		}
-		return
 	default: // Value
-		newObj = newWithParent(o.val, o.parent)
-		return
+		newObj = New(o.val)
 	}
+	newObj.buildParentLink(nil)
+	return
 }
 
 func New(value interface{}) *Object {
-	return newWithParent(value, nil)
-}
-
-func newWithParent(value interface{}, parent *Object) *Object {
 	t := getDeepestValue(value)
-	return &Object{
+	obj := &Object{
 		val:    t,
-		parent: parent,
+		parent: nil,
 	}
+	obj.buildParentLink(nil)
+	return obj
 }

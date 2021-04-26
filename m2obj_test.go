@@ -414,3 +414,109 @@ func TestObject_Clone(t *testing.T) {
 		assert.Equal(t, staticMap, obj2.Staticize())
 	})
 }
+
+func TestObject_Parent(t *testing.T) {
+	obj := New(Group{
+		"a": Group{
+			"b": Group{
+				"c": "c",
+			},
+			"d": New("d"),
+		},
+		"e": "e",
+		"f": Array{
+			Array{"g", "h"},
+			Group{"i": "i"},
+			map[string]interface{}{
+				"j": "j",
+				"k": []interface{}{"l", "m"},
+			},
+			"n",
+		},
+	})
+	assert.NoError(
+		t,
+		obj.Set("o.p.q", Group{
+			"r": map[string]interface{}{
+				"s": map[string]interface{}{
+					"t": "t",
+				},
+			},
+			"u": Array{
+				"v",
+				Group{
+					"w": "w",
+				},
+			},
+		}),
+	)
+	assert.NoError(
+		t,
+		obj.Set(
+			"o.p.q.u.[1].x.y.z",
+			"z",
+		),
+	)
+	assert.NotPanics(t, func() {
+		a := obj.MustGet("a")
+		b := a.MustGet("b")
+		c := b.MustGet("c")
+		d := a.MustGet("d")
+		e := obj.MustGet("e")
+		f := obj.MustGet("f")
+		f0 := f.MustGet("[0]")
+		g := f0.MustGet("[0]")
+		h := f0.MustGet("[1]")
+		f1 := f.MustGet("[1]")
+		i := f1.MustGet("i")
+		f2 := f.MustGet("[2]")
+		j := f2.MustGet("j")
+		k := f2.MustGet("k")
+		l := k.MustGet("[0]")
+		m := k.MustGet("[1]")
+		n := f.MustGet("[3]")
+		o := obj.MustGet("o")
+		p := o.MustGet("p")
+		q := p.MustGet("q")
+		r := q.MustGet("r")
+		s := r.MustGet("s")
+		T := s.MustGet("t")
+		u := q.MustGet("u")
+		v := u.MustGet("[0]")
+		u1 := u.MustGet("[1]")
+		w := u1.MustGet("w")
+		x := u1.MustGet("x")
+		y := x.MustGet("y")
+		z := y.MustGet("z")
+		assert.Equal(t, obj, a.Parent())
+		assert.Equal(t, a, b.Parent())
+		assert.Equal(t, b, c.Parent())
+		assert.Equal(t, a, d.Parent())
+		assert.Equal(t, obj, e.Parent())
+		assert.Equal(t, obj, f.Parent())
+		assert.Equal(t, f, f0.Parent())
+		assert.Equal(t, f0, g.Parent())
+		assert.Equal(t, f0, h.Parent())
+		assert.Equal(t, f, f1.Parent())
+		assert.Equal(t, f1, i.Parent())
+		assert.Equal(t, f, f2.Parent())
+		assert.Equal(t, f2, j.Parent())
+		assert.Equal(t, f2, k.Parent())
+		assert.Equal(t, k, l.Parent())
+		assert.Equal(t, k, m.Parent())
+		assert.Equal(t, f, n.Parent())
+		assert.Equal(t, obj, o.Parent())
+		assert.Equal(t, o, p.Parent())
+		assert.Equal(t, p, q.Parent())
+		assert.Equal(t, q, r.Parent())
+		assert.Equal(t, r, s.Parent())
+		assert.Equal(t, s, T.Parent())
+		assert.Equal(t, q, u.Parent())
+		assert.Equal(t, u, v.Parent())
+		assert.Equal(t, u, u1.Parent())
+		assert.Equal(t, u1, w.Parent())
+		assert.Equal(t, u1, x.Parent())
+		assert.Equal(t, x, y.Parent())
+		assert.Equal(t, y, z.Parent())
+	})
+}
