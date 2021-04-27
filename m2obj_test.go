@@ -379,10 +379,7 @@ func TestObject_Clone(t *testing.T) {
 		assert.NotPanics(t, func() {
 			assert.NoError(t, obj.Set("arr.[2].1", "arr.[2].1 - test"))
 			assert.Equal(t, "arr.[2].1 - test", obj.MustGet("arr.[2].1").ValStr())
-			assert.Panics(t, func() {
-				str := obj2.MustGet("arr.[2].1").ValStr()
-				assert.NotEqual(t, "arr.[2].1 - test", str)
-			})
+			assert.Equal(t, 1, obj2.MustGet("arr.[2].1").ValInt())
 			assert.NoError(t, obj.MustGet("arr").ArrPushAll(10, 11, 12))
 			assert.Greater(t, len(*obj.MustGet("arr").val.(*arrayData)), 5)
 			assert.Equal(t, len(*obj2.MustGet("arr").val.(*arrayData)), 3)

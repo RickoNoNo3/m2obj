@@ -2,10 +2,12 @@ package m2obj
 
 import (
 	"github.com/stretchr/testify/assert"
+	"math"
 	"reflect"
 	"testing"
 )
 
+// 老实人转换
 func TestObject_Vals(t *testing.T) {
 	obj := New(groupData{})
 	assert.NoError(t, obj.Set("1", 1))
@@ -42,21 +44,101 @@ func TestObject_Vals(t *testing.T) {
 	assert.Equal(t, 10, obj.MustGet("custom").Val().(Tmp).A)
 	obj.SetVal(1)
 	assert.Equal(t, 1, obj.ValInt())
-	assert.Panics(t, func() {
-		obj.ValBool()
-	})
-	assert.Panics(t, func() {
-		obj.ValInt8()
-	})
-	assert.Panics(t, func() {
-		obj.ValStr()
-	})
-	assert.Panics(t, func() {
-		_ = obj.val.(*arrayData)
-	})
 	assert.Equal(t, map[string]interface{}{
 		"val": 1,
 	}, obj.Staticize())
+}
+
+// 数字乱转
+func TestObject_Vals2(t *testing.T) {
+	obj := New(nil)
+	obj.SetVal(1)
+	assert.Equal(t, 1, obj.ValInt())
+	assert.Equal(t, byte(1), obj.ValByte())
+	assert.Equal(t, int8(1), obj.ValInt8())
+	assert.Equal(t, int16(1), obj.ValInt16())
+	assert.Equal(t, int32(1), obj.ValInt32())
+	assert.Equal(t, int64(1), obj.ValInt64())
+	assert.Equal(t, uint64(1), obj.ValUint())
+	assert.Equal(t, float32(1), obj.ValFloat32())
+	assert.Equal(t, float64(1), obj.ValFloat64())
+	obj.SetVal(int8(1))
+	assert.Equal(t, 1, obj.ValInt())
+	assert.Equal(t, int8(1), obj.ValInt8())
+	assert.Equal(t, int16(1), obj.ValInt16())
+	assert.Equal(t, int32(1), obj.ValInt32())
+	assert.Equal(t, int64(1), obj.ValInt64())
+	assert.Equal(t, byte(1), obj.ValByte())
+	assert.Equal(t, uint64(1), obj.ValUint())
+	assert.Equal(t, float32(1), obj.ValFloat32())
+	assert.Equal(t, float64(1), obj.ValFloat64())
+	obj.SetVal(int64(1))
+	assert.Equal(t, 1, obj.ValInt())
+	assert.Equal(t, int8(1), obj.ValInt8())
+	assert.Equal(t, int16(1), obj.ValInt16())
+	assert.Equal(t, int32(1), obj.ValInt32())
+	assert.Equal(t, int64(1), obj.ValInt64())
+	assert.Equal(t, byte(1), obj.ValByte())
+	assert.Equal(t, uint64(1), obj.ValUint())
+	assert.Equal(t, float32(1), obj.ValFloat32())
+	assert.Equal(t, float64(1), obj.ValFloat64())
+	obj.SetVal(float32(1.8))
+	assert.Equal(t, 1, obj.ValInt())
+	assert.Equal(t, int8(1), obj.ValInt8())
+	assert.Equal(t, int16(1), obj.ValInt16())
+	assert.Equal(t, int32(1), obj.ValInt32())
+	assert.Equal(t, int64(1), obj.ValInt64())
+	assert.Equal(t, uint64(1), obj.ValUint())
+	assert.Equal(t, byte(1), obj.ValByte())
+	assert.True(t, func() bool {
+		except := float32(1.8)
+		actual := obj.ValFloat32()
+		return math.Abs(float64(except-actual)) < 0.000001
+	}())
+	assert.True(t, func() bool {
+		except := 1.8
+		actual := obj.ValFloat64()
+		return math.Abs(except-actual) < 0.000001
+	}())
+	obj.SetVal(1.8)
+	assert.Equal(t, 1, obj.ValInt())
+	assert.Equal(t, int8(1), obj.ValInt8())
+	assert.Equal(t, int16(1), obj.ValInt16())
+	assert.Equal(t, int32(1), obj.ValInt32())
+	assert.Equal(t, int64(1), obj.ValInt64())
+	assert.Equal(t, uint64(1), obj.ValUint())
+	assert.Equal(t, byte(1), obj.ValByte())
+	assert.True(t, func() bool {
+		except := float32(1.8)
+		actual := obj.ValFloat32()
+		return math.Abs(float64(except-actual)) < 0.000001
+	}())
+	assert.True(t, func() bool {
+		except := 1.8
+		actual := obj.ValFloat64()
+		return math.Abs(except-actual) < 0.000001
+	}())
+}
+
+// 字符串乱转
+func TestObject_Vals3(t *testing.T) {
+	obj := New(nil)
+	obj.SetVal("😘哟哟切克闹")
+	assert.Equal(t, "😘哟哟切克闹", obj.ValStr())
+	assert.Equal(t, []byte("😘哟哟切克闹"), obj.ValBytes())
+	assert.Equal(t, []rune("😘哟哟切克闹"), obj.ValRunes())
+	obj.SetVal([]byte("😘哟哟切克闹"))
+	assert.Equal(t, "😘哟哟切克闹", obj.ValStr())
+	assert.Equal(t, []byte("😘哟哟切克闹"), obj.ValBytes())
+	assert.Equal(t, []rune("😘哟哟切克闹"), obj.ValRunes())
+	obj.SetVal([]rune("😘哟哟切克闹"))
+	assert.Equal(t, "😘哟哟切克闹", obj.ValStr())
+	assert.Equal(t, []byte("😘哟哟切克闹"), obj.ValBytes())
+	assert.Equal(t, []rune("😘哟哟切克闹"), obj.ValRunes())
+	// ---- rune ----
+	obj2 := New('❤')
+	assert.Equal(t, []byte(string('❤')), obj2.ValBytes())
+	assert.Equal(t, "❤", obj2.ValStr())
 }
 
 func TestObject_Is(t *testing.T) {

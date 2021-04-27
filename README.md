@@ -92,7 +92,9 @@ func main() {
 
 ```
 
-Note that: As a character of `json` package of Go, the number variables will be parsed as `float64`, that causes some operation exceptions related to the type. By the way, you can implement the `Formatter` interface easily by yourself, to support more customized functions.
+Note that: As a character of `json` package of Go, the number variables are always parsed as `float64`. Strictly using the `ValXxx()` methods only, lets you can ignore this character. Or, such as to use `Val()`, you have to check it by yourself.
+
+By the way, you can implement the `Formatter` interface easily by yourself, to support more customized functions.
 
 ### As a configuration manager
 
@@ -319,16 +321,21 @@ func main() {
 | `Has()` | Returns if the child assigned by the `keyStr` exists. |
 | `Remove()` | Remove a child (and its children as well) assigned by the `keyStr`. If the removing is successful or the child doesn't exist at all, return `true`, or else, return `false`. |
 | `SetVal()` | Set the value of the object itself, not for its any child. |
-| `Val()` | Get value of the object itself, as a type of `interface{}`. You can do your own operations on it, like `switch (type)`. |
-| `ValStr()` | Get value of the object itself, and assert it is a `string`. |
-| `ValBool()` | Get value of the object itself, and assert it is a `bool`. |
-| `ValInt()` | Get value of the object itself, and assert it is a `int`. |
-| `ValInt8()` | Get value of the object itself, and assert it is a `int8`. |
-| `ValInt16()` | Get value of the object itself, and assert it is a `int16`. |
-| `ValInt32()` | Get value of the object itself, and assert it is a `int32`. |
-| `ValInt64()` | Get value of the object itself, and assert it is a `int64`. |
-| `ValFloat32()` | Get value of the object itself, and assert it is a `float32`. |
-| `ValFloat64()` | Get value of the object itself, and assert it is a `float64`. |
+| `Val()` | Get value of the object itself, as a type of `interface{}`. You can do your own operations on it, like `switch (type)` and `.(type)`, and even some `reflect` methods. |
+| `ValStr()` | Get value of the object itself, and assert it is or transform it to a `string`. |
+| `ValBool()` | Get value of the object itself, and assert it is or transform it to a `bool`. |
+| `ValByte()` | Get value of the object itself, and assert it is or transform it to a `byte`. |
+| `ValBytes()` | Get value of the object itself, and assert it is or transform it to a `[]byte`. |
+| `ValRune()` | Get value of the object itself, and assert it is or transform it to a `rune`. |
+| `ValRunes()` | Get value of the object itself, and assert it is or transform it to a `[]rune`. |
+| `ValInt()` | Get value of the object itself, and assert it is or transform it to an `int`. |
+| `ValInt8()` | Get value of the object itself, and assert it is or transform it to an `int8`. |
+| `ValInt16()` | Get value of the object itself, and assert it is or transform it to an `int16`. |
+| `ValInt32()` | Get value of the object itself, and assert it is or transform it to an `int32`. |
+| `ValInt64()` | Get value of the object itself, and assert it is or transform it to an `int64`. |
+| `ValUint()` | Get value of the object itself, and assert it is or transform it to an `uint64`. |
+| `ValFloat32()` | Get value of the object itself, and assert it is or transform it to a `float32`. |
+| `ValFloat64()` | Get value of the object itself, and assert it is or transform it to a `float64`. |
 | `Staticize()` | Peel the object and all of its children. If the object is a Group, the method returns a `map[string]interface{}` contains its children directly. If it is an Array, the method returns `map[string]interface{}{"list": []interface{}}` and its children will be push into the `list`. Or else, the method returns `map[string]interface{}{"val":interface{}}` and the `val` will be the value of the object. As for children, Group children will be transformed to `map[string]interface{}` and Array children will to `[]interface{}`. |
 | `Clone()` | Deep clone an object. |
 | `Is()` | Use `reflect` to judge the type of an Object's value. |

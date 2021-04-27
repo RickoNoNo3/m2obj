@@ -48,16 +48,6 @@ func TestObject_GroupForeach(t *testing.T) {
 		}))
 	})
 	grp3 = make(map[string]string)
-	// throw the panic directly
-	assert.Panics(t, func() {
-		assert.NoError(t, grp2.GroupForeach(func(key string, obj *Object) error {
-			grp3[key] = obj.ValStr()
-			return nil
-		}))
-	})
-	assert.Error(t, New(grp3).GroupForeach(func(key string, obj *Object) error {
-		return nil
-	}))
 }
 
 func groupMergeInit() (grp1, grp2 *Object) {
