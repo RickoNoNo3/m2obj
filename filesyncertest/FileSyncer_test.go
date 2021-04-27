@@ -66,7 +66,7 @@ func TestFileSyncer_Save(t *testing.T) {
 	assert.NoError(t, fs.Save())
 	fileBytes, err := ioutil.ReadFile(filePath)
 	assert.NoError(t, err)
-	fileObj, err := formatter.UnMarshal(fileBytes)
+	fileObj, err := formatter.Unmarshal(fileBytes)
 	assert.NoError(t, err)
 	assert.Equal(t, obj.Staticize(), fileObj.Staticize())
 }
@@ -91,7 +91,7 @@ func TestFileSyncer_AutoSave(t *testing.T) {
 	checkObj := func(t *testing.T) {
 		fileBytes, err := ioutil.ReadFile(filePath)
 		assert.NoError(t, err)
-		fileObj, err := formatter.UnMarshal(fileBytes)
+		fileObj, err := formatter.Unmarshal(fileBytes)
 		assert.NoError(t, err)
 		assert.Equal(t, obj.Staticize(), fileObj.Staticize())
 	}
@@ -221,7 +221,7 @@ func TestFileSyncer_AutoLoadOnChange(t *testing.T) {
 	getActualFileObj := func() (fileObj *m2obj.Object) {
 		fileBytes, err := ioutil.ReadFile(filePath)
 		assert.NoError(t, err)
-		fileObj, err = formatter.UnMarshal(fileBytes)
+		fileObj, err = formatter.Unmarshal(fileBytes)
 		assert.NoError(t, err)
 		return
 	}

@@ -98,7 +98,7 @@ func (fs *FileSyncer) Load() (err error) {
 	fs.fileMutex.Unlock()
 	if err == nil {
 		var obj *Object
-		obj, err = fs.formatter.UnMarshal(buf)
+		obj, err = fs.formatter.Unmarshal(buf)
 		if err == nil {
 			if fs.HardLoad {
 				fs.objMutex.Lock()

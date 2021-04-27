@@ -20,7 +20,7 @@ func (f Formatter) Marshal(obj *m2obj.Object) (data []byte, err error) {
 	return
 }
 
-func (f Formatter) UnMarshal(data []byte) (obj *m2obj.Object, err error) {
+func (f Formatter) Unmarshal(data []byte) (obj *m2obj.Object, err error) {
 	decoder := json.NewDecoder(bytes.NewBuffer(data))
 	m := make(map[string]interface{})
 	err = decoder.Decode(&m)
