@@ -92,8 +92,7 @@ func main() {
 
 ```
 
-Note that: As a character of `json` package of Go, the number variables will be parsed as `float64`, that causes some operation exceptions related to the type. By the way, you can implement
-the `Formatter` interface easily by yourself, to support more customized functions.
+Note that: As a character of `json` package of Go, the number variables will be parsed as `float64`, that causes some operation exceptions related to the type. By the way, you can implement the `Formatter` interface easily by yourself, to support more customized functions.
 
 ### As a configuration manager
 
@@ -269,8 +268,7 @@ func main() {
   - Like `[]` in JSON.
   - To create an Array Object, use `New(Array{v1,v2 ...})`.
 - `Value` is any other type of value.
-  - The inner val of a Value Object will never be `Object`/`*Object`, if the `SetVal()` called with an Object param, it will be dismounting by a private method named `getDeepestValue`. It means, All
-    the methods that have `interface{}` params can be called with a wrapped `Object` or just a value, they are all worked.
+  - The inner val of a Value Object will never be `Object`/`*Object`, if the `SetVal()` called with an Object param, it will be dismounting by a private method named `getDeepestValue`. It means, All the methods that have `interface{}` params can be called with a wrapped `Object` or just a value, they are all worked.
 
 **Key String**
 
@@ -280,8 +278,7 @@ func main() {
 
 - Example: `"A.B.[0].C"`
 
-- Explain: the example means that ***Find an unconstrained object called `C` in the group object that is found as the `[0]` element in an array object called `B` that is found in a group object
-  called `A`***.
+- Explain: the example means that ***Find an unconstrained object called `C` in the group object that is found as the `[0]` element in an array object called `B` that is found in a group object called `A`***.
 
 - In other words:
 
@@ -386,8 +383,7 @@ func main() {
 | `GetBoundObject()` | |
 | `HardLoad` | `bool`, appoint the behavior of `Load()`. If `true`, the loading will remove all the keys in the bound Object that are not found in the current file, or the keys will be kept. (Default: `false`) |
 | `AutoSaveTime` | `int64`, the milliseconds interval to trigger `Save()`. If it is less than 0, auto saving is disabled. If it equals to 0, auto saving is triggered when the Object changed. If it is greater than 0, auto saving is triggered on each interval. (Default: 0) |
-| `AutoLoadTime` | `int64`, the milliseconds interval to trigger `Load()`. If it is <= 0, auto loading is disabled. Or else, auto loading is triggered on each interval and **auto saving is disabled
-whether the `AutoSaveTime` is**. (Default: 0) |
+| `AutoLoadTime` | `int64`, the milliseconds interval to trigger `Load()`. If it is <= 0, auto loading is disabled. Or else, auto loading is triggered on each interval and **auto saving is disabled whether the `AutoSaveTime` is**. (Default: 0) |
 
 # TODO
 
