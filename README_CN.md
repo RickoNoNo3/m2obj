@@ -1,7 +1,7 @@
 |语言|
 |:------:|
 |[English](https://github.com/RickoNoNo3/m2obj)|
-|[中文](https://github.com/RickoNoNo3/m2obj/README_CN.md)|
+|[中文](https://github.com/RickoNoNo3/m2obj/blob/master/README_CN.md)|
 
 # M2Obj
 
