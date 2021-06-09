@@ -1,4 +1,11 @@
+|Language|
+|:------:|
+|[English](https://github.com/RickoNoNo3/m2obj)|
+|[中文](https://github.com/RickoNoNo3/m2obj/README_CN.md)|
+
 # M2Obj
+
+一个类JSON的、动态的、可持久化的 Golang 【对象结构】，可用于管理配置项、缓存、模板引擎数据，也可以单纯用来存储动态JSON格式对象。
 
 A JSON-like, dynamic, persistent OBJECT STRUCTURE for configurations, caches, Go Template data or just to store dynamic JSON objects in Go.
 
@@ -92,13 +99,15 @@ func main() {
 
 ```
 
-Note that: As a character of `json` package of Go, the number variables are always parsed as `float64`. Strictly using the `ValXxx()` methods only, lets you can ignore this character. Or, such as to use `Val()`, you have to check it by yourself.
+Note that: As a character of `json` package of Go, the number variables are always parsed as `float64`. Strictly using the `ValXxx()` methods only, lets you can ignore this character because of the internal implementation of M2Obj. Or, such as to use `Val()`, you have to check it by yourself.
 
 By the way, you can implement the `Formatter` interface easily by yourself, to support more customized functions.
 
 ### As a configuration manager
 
 Easily Get/Set for configurations with any structure you like. There is a `FileSyncer` to sync between your config file and m2obj object.
+
+The following example demonstrates filtering DEBUG output by changing the global DEBUG level:
 
 `config/config.go`:
 
@@ -176,7 +185,7 @@ func main() {
 
 ### As a Go Template data wrapper
 
-Make use of `Staticize()`, the Group object can be easily transformed to an `map[string]interface{}`. You can append global configurations to Go Template in one line.
+Make use of `Staticize()`, the Group object can be easily transformed to an `map[string]interface{}`. You can append global configurations to Go Template in one line. Of course, you can also perform more data operations on it.
 
 `main.go`:
 
@@ -252,35 +261,35 @@ func main() {
 | `Object` | `type Object struct` | The base type of all object nodes. Always appears as `*Object` |
 | `Group` | `map[string]interface{}`| Used like a JSON object |
 | `Array` | `[]interface{}` | Used like a JSON array |
-| `Formatter` | `type Formatter interface` | Transforms the object to a given data format (like JSON, XML, etc.) |
+| `Formatter` | `type Formatter interface` | Converts the object from/to a given data format (like JSON, XML, etc.) |
 | `FileSyncer` | `type FileSyncer struct` | Syncs between files and memory, uses Formatter |
 
 ### Special Definition
 
 **Object Type**
 
-- All Objects are `*Object`.
+- All elements have the same type: `*Object`.
 - There are three Object Types: `Group`, `Array` and `Value`. They can only be differentiated by `IsGroup`, `IsArray` and `IsValue`.
 - `Group` is a key-value map.
   - Definition: `map[string]interface{}`.
   - Like `{}` in JSON.
-  - To create a Group Object, use `New(Group{"k1":v1,"k2":v2 ...})`.
+  - To create a Group Object, use `m2obj.New(m2obj.Group{"k1":v1,"k2":v2 ...})`.
 - `Array` is an array(or, slice).
   - Definition: `[]interface{}`.
   - Like `[]` in JSON.
-  - To create an Array Object, use `New(Array{v1,v2 ...})`.
+  - To create an Array Object, use `m2obj.New(m2obj.Array{v1,v2 ...})`.
 - `Value` is any other type of value.
-  - The inner val of a Value Object will never be `Object`/`*Object`, if the `SetVal()` called with an Object param, it will be dismounting by a private method named `getDeepestValue`. It means, All the methods that have `interface{}` params can be called with a wrapped `Object` or just a value, they are all worked.
+  - The inner val of a Value Object will never be `Object`/`*Object`, if the `New()` or `SetVal()` called with an Object param, it will be dismounting by a private method named `getDeepestValue`. It means, All the methods that have `interface{}` params can be called with a wrapped `Object` or just a value, they are all worked.
 
 **Key String**
 
 - To locale an object(element) simply. Used by `Get`/`Set`/`Has`/`Remove`.
 
-- Called `keyStr` in the code.
+- Named `keyStr` in the code.
 
 - Example: `"A.B.[0].C"`
 
-- Explain: the example means that ***Find an unconstrained object called `C` in the group object that is found as the `[0]` element in an array object called `B` that is found in a group object called `A`***.
+- Explain: the example means that ***Group `A` -> Array `B` -> Group `[0]` -> Any `C`***.
 
 - In other words:
 
@@ -336,21 +345,21 @@ func main() {
 | `ValUint()` | Get the inner value of an Object, and assert it is or transform it to an `uint64`. |
 | `ValFloat32()` | Get the inner value of an Object, and assert it is or transform it to a `float32`. |
 | `ValFloat64()` | Get the inner value of an Object, and assert it is or transform it to a `float64`. |
-| `Staticize()` | Peel the object and all of its children. If the object is a Group, the method returns a `map[string]interface{}` contains its children directly. If it is an Array, the method returns `map[string]interface{}{"list": []interface{}}` and its children will be push into the `list`. Or else, the method returns `map[string]interface{}{"val":interface{}}` and the `val` will be the value of the object. As for children, Group children will be transformed to `map[string]interface{}` and Array children will to `[]interface{}`. |
+| `Staticize()` | Peel the object and all of its children to a `map[string]interface{}` |
 | `Clone()` | Deep clone an object. |
 | `Is()` | Use `reflect` to judge the type of an Object's value. |
-| `IsLike()` | Compare and judge if the type of the Object's value is same as a variable. |
+| `IsLike()` | Use `reflect` to compare and judge if the type of the Object's value is same as a variable. |
 | `IsNil()` | Judge if the Object's value is `nil`. |
-| `IsGroup()` | Return if the Object is a Group Object |
-| `IsArray()` | Return if the Object is a Array Object |
-| `IsValue()` | Return if the Object is a Value Object |
+| `IsGroup()` | Judge if the Object is a Group Object |
+| `IsArray()` | Judge if the Object is a Array Object |
+| `IsValue()` | Judge if the Object is a Value Object |
 | `Parent()` | Get the parent Object of an Object, if the Object is root node, return `nil` |
 
 `*Object` as a Group:
 
 | Method / Field | Note |
 | -------------- | ---- |
-| `GroupMerge()` | Merge another Group Object to this Group. The merging can be forced or unforced. The main difference is the behavior when a key is exists. |
+| `GroupMerge()` | Merge another Group Object to this Group. Enable the forced option to force replacement when the key already exists. |
 | `GroupForeach()` | |
 
 `*Object` as an Array:
@@ -358,7 +367,7 @@ func main() {
 | Method / Field | Note |
 | -------------- | ---- |
 | `ArrPush()` | |
-| `ArrPushArr()` | Push another Array Object to an Array Object |
+| `ArrMerge()` | Push another Array Object to an Array Object |
 | `ArrPushAll()` | Push all params(variable-length) to an Array Object |
 | `ArrPop()` | |
 | `ArrShift()` | |
@@ -395,7 +404,7 @@ func main() {
 # TODO
 
 - [x] `IsGroup` / `IsArray` / `IsValue`
-- [x] More `Arr*` Methods
+- [x] More `Arr` Methods
 - [ ] More `Formatter`
 - [ ] Performance Optimizations and Bench Tests.
 - [x] Stronger type definition
