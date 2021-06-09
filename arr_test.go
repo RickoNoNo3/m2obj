@@ -6,35 +6,51 @@ import (
 )
 
 func TestArrs(t *testing.T) {
-	obj := New(groupData{
-		"arr": New(arrayData{
-			New("hello"),
-			New(2),
-			New(groupData{
-				"1": New(1),
-			}),
-		}),
+	obj := New(Group{
+		"arr": Array{
+			"hello",
+			2,
+			Group{
+				"1": 1,
+			},
+		},
 	})
 	// errors
-	t.Run("Invalid Type Errors Test", func(t *testing.T) {
-		var err error
-		assert.Error(t, obj.ArrPush(100))
-		assert.Error(t, obj.ArrPop())
-		assert.Error(t, obj.ArrSet(0, 100))
-		_, err = obj.ArrGet(0)
-		assert.Error(t, err)
-		assert.Error(t, obj.ArrInsert(0, 100))
-		assert.Error(t, obj.ArrRemove(0))
-		assert.Error(t, obj.ArrForeach(func(i int, obj *Object) error { return nil }))
-		_, err = obj.ArrLen()
-		assert.Error(t, err)
+	t.Run("Errors Test", func(t *testing.T) {
+		assert.Panics(t, func() {
+			obj.ArrPush(100)
+		})
+		assert.Panics(t, func() {
+			obj.ArrPop()
+		})
+		assert.Panics(t, func() {
+			obj.ArrSet(0, 100)
+		})
+		assert.Panics(t, func() {
+			obj.ArrGet(0)
+		})
+		assert.Panics(t, func() {
+			obj.ArrInsert(0, 100)
+		})
+		assert.Panics(t, func() {
+			obj.ArrRemove(0)
+		})
+		assert.Panics(t, func() {
+			obj.ArrForeach(func(i int, obj *Object) error { return nil })
+		})
+		assert.Panics(t, func() {
+			obj.ArrLen()
+		})
 	})
-	arr := obj.MustGet("arr")
+	var arr *Object
+	assert.NotPanics(t, func() {
+		arr = obj.MustGet("arr")
+	})
 	// push/len
-	assert.NoError(t, arr.ArrPush(100))
-	arrLen, err := arr.ArrLen()
-	assert.NoError(t, err)
-	assert.Equal(t, 4, arrLen)
+	assert.NotPanics(t, func() {
+		arr.ArrPush(100)
+	})
+	assert.Equal(t, 4, arr.ArrLen())
 	assert.Equal(t, map[string]interface{}{
 		"arr": []interface{}{
 			"hello",
@@ -46,10 +62,10 @@ func TestArrs(t *testing.T) {
 		},
 	}, obj.Staticize())
 	// pop
-	assert.NoError(t, arr.ArrPop())
-	arrLen, err = arr.ArrLen()
-	assert.NoError(t, err)
-	assert.Equal(t, 3, arrLen)
+	assert.NotPanics(t, func() {
+		arr.ArrPop()
+	})
+	assert.Equal(t, 3, arr.ArrLen())
 	assert.Equal(t, map[string]interface{}{
 		"arr": []interface{}{
 			"hello",
@@ -60,50 +76,68 @@ func TestArrs(t *testing.T) {
 		},
 	}, obj.Staticize())
 	// set/get
-	assert.Equal(t, map[string]interface{}{
-		"1": 1,
-	}, arr.MustGet("[2]").Staticize())
-	assert.NoError(t, arr.ArrSet(2, 100))
-	assert.Equal(t, 100, arr.MustGet("[2]").ValInt())
-	gotten, err := arr.ArrGet(2)
-	assert.NoError(t, err)
-	assert.Equal(t, 100, gotten.ValInt())
+	assert.NotPanics(t, func() {
+		assert.Equal(t, map[string]interface{}{
+			"1": 1,
+		}, arr.MustGet("[2]").Staticize())
+		arr.ArrSet(2, 100)
+		assert.Equal(t, 100, arr.MustGet("[2]").ValInt())
+		assert.Equal(t, 100, arr.ArrGet(2).ValInt())
+	})
 	// insert
-	assert.Error(t, arr.ArrInsert(3, "awd"))
-	assert.NoError(t, arr.ArrInsert(0, "awd"))
-	assert.NoError(t, arr.ArrInsert(2, "awd"))
-	assert.Equal(t, map[string]interface{}{
-		"arr": []interface{}{
-			"awd",
-			"hello",
-			"awd",
-			2,
-			100,
-		},
-	}, obj.Staticize())
+	assert.Panics(t, func() {
+		arr.ArrInsert(arr.ArrLen()+1, "awd")
+	})
+	assert.Panics(t, func() {
+		arr.ArrInsert(-1, "awd")
+	})
+	assert.NotPanics(t, func() {
+		arr.ArrInsert(arr.ArrLen(), "awd")
+		arr.ArrInsert(0, "awd")
+		arr.ArrInsert(2, "awd")
+		assert.Equal(t, map[string]interface{}{
+			"arr": []interface{}{
+				"awd",
+				"hello",
+				"awd",
+				2,
+				100,
+				"awd",
+			},
+		}, obj.Staticize())
+	})
 	// remove
-	assert.Error(t, arr.ArrRemove(-1))
-	assert.NoError(t, arr.ArrRemove(0))
-	assert.NoError(t, arr.ArrRemove(0))
-	assert.Error(t, arr.ArrRemove(3))
-	assert.NoError(t, arr.ArrRemove(1))
-	assert.Equal(t, map[string]interface{}{
-		"arr": []interface{}{
-			"awd",
-			100,
-		},
-	}, obj.Staticize())
+	assert.Panics(t, func() {
+		arr.ArrRemove(arr.ArrLen())
+	})
+	assert.Panics(t, func() {
+		arr.ArrRemove(-1)
+	})
+	assert.NotPanics(t, func() {
+		arr.ArrRemove(0)
+		arr.ArrRemove(0)
+		arr.ArrRemove(3)
+		arr.ArrRemove(1)
+		assert.Equal(t, map[string]interface{}{
+			"arr": []interface{}{
+				"awd",
+				100,
+			},
+		}, obj.Staticize())
+	})
 	// foreach
-	assert.NoError(t, arr.ArrForeach(func(index int, obj *Object) error {
-		obj.SetVal(false)
-		return nil
-	}))
-	assert.Equal(t, map[string]interface{}{
-		"arr": []interface{}{
-			false,
-			false,
-		},
-	}, obj.Staticize())
+	assert.NotPanics(t, func() {
+		assert.NoError(t, arr.ArrForeach(func(index int, obj *Object) error {
+			obj.SetVal(false)
+			return nil
+		}))
+		assert.Equal(t, map[string]interface{}{
+			"arr": []interface{}{
+				false,
+				false,
+			},
+		}, obj.Staticize())
+	})
 }
 
 func TestArrs2(t *testing.T) {
@@ -112,12 +146,16 @@ func TestArrs2(t *testing.T) {
 		2,
 		true,
 	})
-	assert.NoError(t, arr.ArrShift())
+	assert.NotPanics(t, func() {
+		arr.ArrShift()
+	})
 	assert.Equal(t, New(Array{
 		2,
 		true,
 	}).Staticize(), arr.Staticize())
-	assert.NoError(t, arr.ArrUnshift("1"))
+	assert.NotPanics(t, func() {
+		arr.ArrUnshift("1")
+	})
 	assert.Equal(t, New(Array{
 		"1",
 		2,
@@ -129,11 +167,19 @@ func TestObject_ArrPushArr(t *testing.T) {
 	arr1 := New(Array{1, 2, 3})
 	arr2 := New(Array{4, 5, "6"})
 	obj := New(Group{"1": 1})
-	assert.Error(t, arr1.ArrPushArr(obj))
-	assert.Error(t, obj.ArrPushArr(arr1))
-	assert.NoError(t, arr1.ArrPushArr(arr2))
+	assert.Panics(t, func() {
+		arr1.ArrMerge(obj)
+	})
+	assert.Panics(t, func() {
+		obj.ArrMerge(arr1)
+	})
+	assert.NotPanics(t, func() {
+		arr1.ArrMerge(arr2)
+	})
 	assert.Equal(t, New(Array{1, 2, 3, 4, 5, "6"}).Staticize(), arr1.Staticize())
-	assert.NoError(t, arr1.ArrPushArr(New([]interface{}{7, 8, 9})))
+	assert.NotPanics(t, func() {
+		arr1.ArrMerge(New([]interface{}{7, 8, 9}))
+	})
 	assert.Equal(t, New(Array{1, 2, 3, 4, 5, "6", 7, 8, 9}).Staticize(), arr1.Staticize())
 }
 
@@ -142,10 +188,14 @@ func TestObject_ArrPushAll(t *testing.T) {
 	arr2 := []int{4, 5, 6}
 	obj := New(Group{"1": 1})
 	// type error
-	assert.Error(t, obj.ArrPushAll(4, 5, 6))
+	assert.Panics(t, func() {
+		obj.ArrPushAll(4, 5, 6)
+	})
 
 	// ... add
-	assert.NoError(t, arr1.ArrPushAll(4, 5, 6))
+	assert.NotPanics(t, func() {
+		arr1.ArrPushAll(4, 5, 6)
+	})
 	assert.Equal(t, New(Array{1, 2, 3, 4, 5, 6}).Staticize(), arr1.Staticize())
 
 	// slice to []interface{} then ... add
@@ -154,13 +204,17 @@ func TestObject_ArrPushAll(t *testing.T) {
 	for i, v := range arr2 {
 		arrInterface2[i] = v
 	}
-	assert.NoError(t, arr1.ArrPushAll(arrInterface2...))
+	assert.NotPanics(t, func() {
+		arr1.ArrPushAll(arrInterface2...)
+	})
 	assert.Equal(t, New(Array{1, 2, 3, 4, 5, 6}).Staticize(), arr1.Staticize())
 
 	// slice for each add
 	arr1 = New(Array{1, 2, 3})
 	for _, v := range arr2 {
-		assert.NoError(t, arr1.ArrPush(v))
+		assert.NotPanics(t, func() {
+			arr1.ArrPush(v)
+		})
 	}
 	assert.Equal(t, New(Array{1, 2, 3, 4, 5, 6}).Staticize(), arr1.Staticize())
 }
@@ -205,7 +259,9 @@ func TestObject_ArrForeach(t *testing.T) {
 		}))
 	})
 	assert.Equal(t, []int{1, 2}, arr3)
-	assert.Error(t, New(arr3).ArrForeach(func(index int, obj *Object) error {
-		return nil
-	}))
+	assert.Panics(t, func() {
+		New(arr3).ArrForeach(func(index int, obj *Object) error {
+			return nil
+		})
+	})
 }

@@ -380,7 +380,7 @@ func TestObject_Clone(t *testing.T) {
 			assert.NoError(t, obj.Set("arr.[2].1", "arr.[2].1 - test"))
 			assert.Equal(t, "arr.[2].1 - test", obj.MustGet("arr.[2].1").ValStr())
 			assert.Equal(t, 1, obj2.MustGet("arr.[2].1").ValInt())
-			assert.NoError(t, obj.MustGet("arr").ArrPushAll(10, 11, 12))
+			obj.MustGet("arr").ArrPushAll(10, 11, 12)
 			assert.Greater(t, len(*obj.MustGet("arr").val.(*arrayData)), 5)
 			assert.Equal(t, len(*obj2.MustGet("arr").val.(*arrayData)), 3)
 		})
@@ -450,10 +450,17 @@ func TestObject_Parent(t *testing.T) {
 	assert.NoError(
 		t,
 		obj.Set(
-			"o.p.q.u.[1].x.y.z",
-			"z",
+			"o.p.q.u.[1].x",
+			nil,
 		),
 	)
+	assert.NotPanics(t, func() {
+		obj.MustGet("o.p.q.u.[1].x").SetVal(Group{
+			"y": Group{
+				"z": "z",
+			},
+		})
+	})
 	assert.NotPanics(t, func() {
 		a := obj.MustGet("a")
 		b := a.MustGet("b")
@@ -515,5 +522,62 @@ func TestObject_Parent(t *testing.T) {
 		assert.Equal(t, u1, x.Parent())
 		assert.Equal(t, x, y.Parent())
 		assert.Equal(t, y, z.Parent())
+	})
+}
+
+func TestObject_Parent_Arr(t *testing.T) {
+	arr := New(Array{"a", "b", "c", "d"})
+	assert.NotPanics(t, func() {
+		arr.ArrSet(arr.ArrLen()-1, Group{
+			"d": 1,
+		})
+	})
+	t.Run("Initial Test", func(t *testing.T) {
+		assert.Equal(t, arr, arr.ArrGet(0).Parent())
+		assert.Equal(t, arr, arr.ArrGet(1).Parent())
+		assert.Equal(t, arr, arr.ArrGet(2).Parent())
+		assert.Equal(t, arr, arr.ArrGet(3).Parent())
+		assert.Equal(t, arr.ArrGet(3), arr.MustGet(".[3].d").Parent())
+	})
+	assert.NotPanics(t, func() {
+		d := arr.ArrGet(3)
+		assert.Equal(t, d, arr.ArrPop())
+		assert.Equal(t, 3, arr.ArrLen())
+	})
+	t.Run("Pop Test", func(t *testing.T) {
+		assert.Equal(t, arr, arr.ArrGet(0).Parent())
+		assert.Equal(t, arr, arr.ArrGet(1).Parent())
+		assert.Equal(t, arr, arr.ArrGet(2).Parent())
+	})
+	assert.NotPanics(t, func() {
+		arr.ArrPushAll("d", Group{
+			"e": "e",
+			"f": "f",
+		})
+		assert.Equal(t, 5, arr.ArrLen())
+	})
+	t.Run("Push Test", func(t *testing.T) {
+		assert.Equal(t, arr, arr.ArrGet(0).Parent())
+		assert.Equal(t, arr, arr.ArrGet(1).Parent())
+		assert.Equal(t, arr, arr.ArrGet(2).Parent())
+		assert.Equal(t, arr, arr.ArrGet(3).Parent())
+		assert.Equal(t, arr, arr.ArrGet(4).Parent())
+		obj := arr.ArrGet(4)
+		assert.Equal(t, obj, obj.MustGet("e").Parent())
+		assert.Equal(t, obj, obj.MustGet("f").Parent())
+	})
+	assert.NotPanics(t, func() {
+		arr.ArrInsert(0, "")
+		arr.ArrInsert(arr.ArrLen(), "")
+		assert.Equal(t, 7, arr.ArrLen())
+	})
+	t.Run("Insert Test", func(t *testing.T) {
+		assert.Equal(t, arr, arr.ArrGet(0).Parent())
+		assert.Equal(t, arr, arr.ArrGet(1).Parent())
+		assert.Equal(t, arr, arr.ArrGet(2).Parent())
+		assert.Equal(t, arr, arr.ArrGet(3).Parent())
+		assert.Equal(t, arr, arr.ArrGet(4).Parent())
+		assert.Equal(t, arr, arr.ArrGet(5).Parent())
+		assert.Equal(t, arr, arr.ArrGet(6).Parent())
 	})
 }

@@ -25,13 +25,15 @@ func split(keyStr string) (keys []string) {
 //     1. the key is not found and `createLost` is false
 //     2. the key is middle of `keyStr` and has an object type neither *groupData nor *arrayData
 //     3. the key behind an Array Object key doesn't satisfy the rule with ArrayName.[index]
-func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
+func splitAndDig(current *Object, keyStr string, createLost bool) (obj, objParent *Object) {
+	tObjParent := current.Parent()
 	tObj := current
 	keys := split(keyStr)
 	for i, key := range keys {
 		if key == "" {
 			continue
 		}
+		tObjParent = tObj
 		// Once the code runs here, the tObj means the parent of the param key.
 		// After this switch, the tObj will be the object self assigned by the param key.
 		switch tObj.val.(type) {
@@ -42,7 +44,7 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 				mapObj := *tObj.val.(*groupData)
 				if i != len(keys)-1 { // is a middle key
 					if arrCheckIndexFormat(keys[i+1]) { // is Array
-						panic(invalidKeyStrErr(keyStr))
+						panic(invalidTypeErr(keyStr))
 					} else { // is Group
 						mapObj[key] = New(groupData{})
 					}
@@ -63,7 +65,7 @@ func splitAndDig(current *Object, keyStr string, createLost bool) *Object {
 			panic(invalidTypeErr(key))
 		}
 	}
-	return tObj
+	return tObj, tObjParent
 }
 
 // The process to make sure the param v is one of [*groupData, *arrayData, UnknownValue].
@@ -106,7 +108,7 @@ func getDeepestValue(v interface{}) interface{} {
 func transArrayToArrayData(array Array) *arrayData {
 	data := New(arrayData{})
 	for _, v := range array {
-		_ = data.ArrPush(getDeepestValue(v))
+		data.ArrPush(getDeepestValue(v))
 	}
 	return data.val.(*arrayData)
 }

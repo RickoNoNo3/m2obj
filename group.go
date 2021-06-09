@@ -1,23 +1,28 @@
 package m2obj
 
+// GroupForeach **!!! ONLY FOR GROUP OBJECT**
+//
+// Loop for all key-value pairs in the group, foreach calls `do`.
+//
+// Stops when do returns a non-nil err and return it.
 func (o *Object) GroupForeach(do func(key string, obj *Object) error) (err error) {
 	switch o.val.(type) {
 	case *groupData:
 		for k, obj := range *o.val.(*groupData) {
 			if err = do(k, obj); err != nil {
-				o.buildParentLink(o.parent)
-				return
+				break
 			}
 		}
 		o.buildParentLink(o.parent)
-		return nil
 	default:
-		return invalidTypeErr("")
+		panic(invalidTypeErr(""))
 	}
+	return
 }
 
-// GroupMerge merges two different GROUP Object deeply.
-// If forced is true, the already exist key in the group will be replaced;
+// GroupMerge **!!! ONLY FOR GROUP OBJECT**
+//
+// Merges two GROUP Object recursively. All already exists array and value objects in o will be replaced (forced == true and there is a key with the same name exists in o2) or reserved (forced == false), other object in o2 will be added into o.
 func (o *Object) GroupMerge(o2 *Object, forced bool) (err error) {
 	return o.groupMerge(o2, forced, true)
 }
