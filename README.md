@@ -12,7 +12,7 @@ A JSON-like, dynamic, persistent OBJECT STRUCTURE for configurations, caches, Go
 ## Why M2Obj
 
 - Go native way of processing tree-shaped dynamic data requires frequent type assertions for each layer, that makes long and long codes. While by using M2Obj you just need to call the packaged method after locating the elements.
-- Go native has a poor support for JSON structural data. M2Obj does a lot on this, and makes an adapted development on JSON / like-JSON structure.
+- Go native has a poor support for JSON structural data. M2Obj does a lot on this, and makes an adapted development on JSON / JSON-like structure.
 - M2Obj has an efficient and concurrent Goroutine file synchronizer, automatically sync between memory data and files
 - Without M2Obj:
   ```go
