@@ -36,7 +36,7 @@ A JSON-like, dynamic, persistent OBJECT STRUCTURE for configurations, caches, Go
   // delete notice of law school
   delete(M["info"].(map[string]interface{})["schools"].([]interface{})[1].(map[string]interface{}), "notice")
   // println "UKP"
-  fmt.Println(M["info"].(map[string]interface{})["name"])
+  fmt.Println(M["info"].(map[string]interface{})["name"].(string))
   // println data as map
   fmt.Println(M)
   ```
