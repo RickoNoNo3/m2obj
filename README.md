@@ -9,6 +9,51 @@
 
 A JSON-like, dynamic, persistent OBJECT STRUCTURE for configurations, caches, Go Template data or just to store dynamic JSON objects in Go.
 
+## Why M2Obj
+
+- Go native way of processing tree-shaped dynamic data requires frequent type assertions for each layer, that makes long and long codes. While by using M2Obj you just need to call the packaged method after locating the elements.
+- Go native has a poor support for JSON structural data. M2Obj does a lot on this, and makes an adapted development on JSON / like-JSON structure.
+- M2Obj has an efficient and concurrent Goroutine file synchronizer, automatically sync between memory data and files
+- Without M2Obj:
+  ```go
+  var M = map[string]interface{}{
+    "info": map[string]interface{}{
+      "name": "UKP",
+      "schools": []interface{}{
+        "Engineering|engineering@ukp.edu|135",
+        map[string]interface{}{
+          "name":         "Law",
+          "email":        "law@ukp.edu",
+          "studentCount": 300,
+          "notice":       "",
+        },
+      },
+    },
+  }
+
+  // set student count of law school to 295
+  M["info"].(map[string]interface{})["schools"].([]interface{})[1].(map[string]interface{})["studentCount"] = 295
+  // delete notice of law school
+  delete(M["info"].(map[string]interface{})["schools"].([]interface{})[1].(map[string]interface{}), "notice")
+  // println "UKP"
+  fmt.Println(M["info"].(map[string]interface{})["name"])
+  // println data as map
+  fmt.Println(M)
+  ```
+- With M2Obj:
+  ```go
+  var M2 = m2obj.New(M) // m2obj can be constructed in a lot of styles, see examples below.
+
+  // set student count of law school to 295
+  M2.Set("info.schools.[1].studentCount", 295)
+  // delete notice of law school
+  M2.Remove("info.schools.[1].notice")
+  // println "UKP"
+  fmt.Println(M2.MustGet("info.name").ValStr())
+  // println data as map
+  fmt.Println(M2.Staticize())
+  ```
+
 ## Install
 
 ```shell
@@ -16,6 +61,8 @@ go get github.com/rickonono3/m2obj
 ```
 
 ## Usages & Examples
+
+> See the complete code of the following examples: [RickoNoNo3/m2obj_examples](https://github.com/RickoNoNo3/m2obj_examples)
 
 - As a map/JSON binder
 - As a configuration manager
@@ -26,28 +73,23 @@ go get github.com/rickonono3/m2obj
 M2Obj can help you to operate a map/JSON or any other JSON-like data easily.
 
 ```go
-package main
-
-import (
-	"fmt"
-
-	"github.com/rickonono3/m2obj"
-)
-
+// initial map
 var m = map[string]interface{}{
-	"a": 1,
-	"b": "2",
-	"c": true,
-	"d": map[string]interface{}{
-		"e": "3",
-	},
+  "a": 1,
+  "b": "2",
+  "c": true,
+  "d": map[string]interface{}{
+    "e": "3",
+  },
 }
 
 func main() {
-	obj := m2obj.New(m)
-	_ = obj.Set("d.f.g", 4)
-	m2 := obj.Staticize()
-	fmt.Println(m2)
+  // new Object with param map[string]interface{}
+  obj := m2obj.New(m)
+  _ = obj.Set("d.f.g", 4)
+  // staticize the object to map
+  m2 := obj.Staticize()
+  fmt.Println(m2)
 }
 ```
 
@@ -70,33 +112,28 @@ Then the `m2` will be:
 You can also use the `m2json.Formatter` to transform a JSON string, like:
 
 ```go
-package main
-
-import (
-	"fmt"
-
-	"github.com/rickonono3/m2obj/m2json"
-)
-
-var json = []byte(`{
-	"a": 1,
-	"b": "2",
-	"c": true,
-	"d": {
-		"e": "3"
-	}
-}`)
+// initial json string
+var jsonStr = `{
+ "a": 1,
+ "b": "2",
+ "c": true,
+ "d": {
+   "e": "3"
+ }
+}`
 
 func main() {
-	formatter := m2json.Formatter{}
-	obj, err := formatter.Unmarshal(json)
-	if err == nil {
-		_ = obj.Set("d.f.g", 4)
-		json, _ = formatter.Marshal(obj)
-		fmt.Println(string(json))
-	}
+  // new Formatter
+  formatter := m2json.Formatter{}
+  // convert jsonStr([]byte) to a new Object
+  obj, err := formatter.Unmarshal([]byte(jsonStr))
+  if err == nil {
+    _ = obj.Set("d.f.g", 4)
+    // convert Object to jsonStr2([]byte)
+    jsonStr2, _ := formatter.Marshal(obj)
+    fmt.Println(string(jsonStr2))
+  }
 }
-
 ```
 
 Note that: As a character of `json` package of Go, the number variables are always parsed as `float64`. Strictly using the `ValXxx()` methods only, lets you can ignore this character because of the internal implementation of M2Obj. Or, such as to use `Val()`, you have to check it by yourself.
@@ -109,68 +146,61 @@ Easily Get/Set for configurations with any structure you like. There is a `FileS
 
 The following example demonstrates filtering DEBUG output by changing the global DEBUG level:
 
-`config/config.go`:
+`config.go`:
 
 ```go
-package config
-
-import (
-	"github.com/rickonono3/m2obj"
-	"github.com/rickonono3/m2obj/m2json"
-)
-
 const (
-	LevelInfo = iota
-	LevelWarn
-	LevelError
+  LevelInfo = iota
+  LevelWarn
+  LevelError
 )
 
 var Config *m2obj.Object
 var FileSyncer *m2obj.FileSyncer
 
 func init() {
-	Config = m2obj.New(m2obj.Group{
-		"Debug": m2obj.Group{
-			"IsDebugging": true,
-			"Level":       LevelWarn,
-		},
-	})
-	FileSyncer = m2obj.NewFileSyncer("./config.json", m2json.Formatter{})
-	FileSyncer.BindObject(Config)
+  Config = m2obj.New(m2obj.Group{
+    "Debug": m2obj.Group{
+      "IsDebugging": true,
+      "Level":       LevelWarn,
+    },
+  })
+  // FileSyncer
+  FileSyncer = m2obj.NewFileSyncer("./config.json", m2json.Formatter{})
+  FileSyncer.BindObject(Config)
+  // FileSyncer.Load()
+
+  // DEFAULT FILE_SYNCER OPTIONS:
+  //   Auto Saving  : On bound object changes
+  //   Auto Loading : Never
+  //   Hard Load    : False
 }
 ```
 
 `main.go`:
 
 ```go
-package main
-
-import (
-	"fmt"
-
-	"m2obj_demo/config"
-)
-
+// Print str if IsDebugging && level >= DebugLevel
 func debugPrint(str string, level int) {
-	debug := config.Config.MustGet("Debug")
-	if debug.MustGet("IsDebugging").ValBool() {
-		if level >= debug.MustGet("Level").ValInt() {
-			fmt.Println(">> " + str)
-		}
-	}
+  debug := Config.MustGet("Debug")
+  if debug.MustGet("IsDebugging").ValBool() {
+    if level >= debug.MustGet("Level").ValInt() {
+      fmt.Println(">> " + str)
+    }
+  }
 }
 
 func main() {
-	debugPrint("This is Info1", config.LevelInfo)
-	debugPrint("This is Warn1", config.LevelWarn)
-	debugPrint("This is Error1", config.LevelError)
+  debugPrint("This is Info1", LevelInfo)   // filtered
+  debugPrint("This is Warn1", LevelWarn)   // printed
+  debugPrint("This is Error1", LevelError) // printed
 
-	fmt.Println("----------")
-	_ = config.Config.Set("Debug.Level", config.LevelError)
+  fmt.Println("----------")
+  _ = Config.Set("Debug.Level", LevelError)
 
-	debugPrint("This is Info2", config.LevelInfo)
-	debugPrint("This is Warn2", config.LevelWarn)
-	debugPrint("This is Error2", config.LevelError)
+  debugPrint("This is Info2", LevelInfo)   // filtered
+  debugPrint("This is Warn2", LevelWarn)   // filtered
+  debugPrint("This is Error2", LevelError) // printed
 }
 ```
 
@@ -185,36 +215,35 @@ func main() {
 
 ### As a Go Template data wrapper
 
-Make use of `Staticize()`, the Group object can be easily transformed to an `map[string]interface{}`. You can append global configurations to Go Template in one line. Of course, you can also perform more data operations on it.
+You can append global configurations to Go Template in one line. Of course, you can also perform more data operations on it.
+
+Make use of `Staticize()`, the Group object can be easily transformed to an `map[string]interface{}`.
 
 `main.go`:
 
 ```go
-package main
-
-import (
-	"html/template"
-	"os"
-
-	"github.com/rickonono3/m2obj"
-)
-
+// Config is the global configuration
 var Config = m2obj.New(m2obj.Group{
-	"cdn": "https://example.com",
+  "cdn": "https://example.com",
 })
 
 func main() {
-	t, err := template.ParseFiles("index.gohtml")
-	if err == nil {
-		_ = t.Execute(os.Stdout, m2obj.New(m2obj.Group{
-			"config": Config,
-			"title":  "M2Obj Demo",
-			"body": m2obj.Group{
-				"h1":   "M2Obj Demo for Go Template Data Wrapper",
-				"text": "Enjoy!",
-			},
-		}).Staticize())
-	}
+  // new template
+  t, err := template.ParseFiles("index.gohtml")
+  if err == nil {
+    // define data of the executed template
+    data := m2obj.New(m2obj.Group{
+      "title": "M2Obj Examples",
+      "body": m2obj.Group{
+        "h1":   "M2Obj Examples for Go Template Data Wrapper",
+        "text": "Enjoy!",
+      },
+    })
+    // add the config object to data of the executed template.
+    data.Set("config", Config)
+    // staticize the data
+    _ = t.Execute(os.Stdout, data.Staticize())
+  }
 }
 ```
 
@@ -408,3 +437,4 @@ func main() {
 - [ ] More `Formatter`
 - [ ] Performance Optimizations and Bench Tests.
 - [x] Stronger type definition
+- [ ] Solve the issue of field assignment of Struct
