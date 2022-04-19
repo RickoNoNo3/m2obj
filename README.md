@@ -5,7 +5,7 @@
 
 # M2Obj
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/rickonono3/m2obj/workflow?label=built%20%26%20test&style=flat-square)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/rickonono3/m2obj/workflow?label=build%20%26%20test&style=flat-square)
 
 一个类JSON的、动态的、可持久化的 Golang 【对象结构】，可用于管理配置项、缓存、模板引擎数据，也可以单纯用来存储动态JSON格式对象。
 
