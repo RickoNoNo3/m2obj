@@ -5,15 +5,14 @@
 
 # M2Obj
 
-一个类JSON的、动态的、可持久化的 Golang 【对象结构】，可用于管理配置项、缓存、模板引擎数据，也可以单纯用来存储动态JSON格式对象。
+一个类JSON的、动态的、可持久化的 Golang 【对象结构】，可用于管理配置项、缓存、模板引擎数据，也可以单纯用来存储动态JSON/YAML格式对象。
 
-A JSON-like, dynamic, persistent OBJECT STRUCTURE for configurations, caches, Go Template data or just to store dynamic JSON objects in Go.
+A JSON-like, dynamic, persistent OBJECT STRUCTURE for configurations, caches, Go Template data or just to store dynamic JSON/YAML objects in Go.
 
 ## Why M2Obj
 
-- Go native way of processing tree-shaped dynamic data requires frequent type assertions for each layer, that makes long and long codes. While by using M2Obj you just need to call the packaged method after locating the elements.
-- Go native has a poor support for JSON structural data. M2Obj does a lot on this, and makes an adapted development on JSON / JSON-like structure.
-- M2Obj has an efficient and concurrent Goroutine file synchronizer, it can automatically synchronize between memory data and files
+- **EASILY USE**: Go native way of processing tree-shaped dynamic data requires frequent type assertions for each layer, that makes long and long codes. While by using M2Obj you just need to call the packaged method after locating the elements.
+- **HOT RELOAD**: M2Obj has an efficient and concurrent Goroutine file synchronizer, it can automatically and dynamically synchronize between memory data and files
 - Without M2Obj:
   ```go
   var M = map[string]interface{}{
@@ -292,6 +291,12 @@ func main() {
 | `Array` | `[]interface{}` | Used like a JSON array |
 | `Formatter` | `type Formatter interface` | Converts the object from/to a given data format (like JSON, XML, etc.) |
 | `FileSyncer` | `type FileSyncer struct` | Syncs between files and memory, uses Formatter |
+
+Formatters:
+- [x] `m2json.Formatter`
+- [x] `m2yaml.Formatter`
+- [ ] `m2xml.Formatter`
+- [ ] `m2toml.Formatter`
 
 ### Special Definition
 

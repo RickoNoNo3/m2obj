@@ -1,64 +1,19 @@
 package filesyncertest
 
 import (
+	"io/ioutil"
+	"testing"
+	"time"
+
 	"github.com/rickonono3/m2obj"
 	"github.com/rickonono3/m2obj/m2json"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
-	"runtime"
-	"testing"
-	"time"
 )
 
 // 需要注意：处理JSON数据时应当将所有数字视为float64
 
-var obj *m2obj.Object
-
-var filePath string
-
-func initTestData() {
-	if runtime.GOOS == "windows" {
-		filePath = "C:\\test.json"
-	} else {
-		filePath = "~/test.json"
-	}
-	obj = m2obj.New(m2obj.Group{
-		"a": "a",
-		"b": float64(2),
-		"c": true,
-		"d": m2obj.Group{
-			"Sa": "Sa",
-			"Sb": float64(233),
-			"Sc": false,
-		},
-		"e": m2obj.Group{
-			"ea": m2obj.Group{
-				"eaa": m2obj.Group{
-					"eaaa": m2obj.Array{float64(1), float64(2), "3"},
-				},
-			},
-			"eb": "test",
-		},
-		"f": m2obj.Array{
-			m2obj.Group{
-				"f0": "f0",
-			},
-			m2obj.Group{
-				"f1": "f1",
-			},
-			m2obj.Group{
-				"f2": "f2",
-			},
-			"f3",
-			float64(4),
-		},
-	})
-	_ = os.Remove(filePath)
-}
-
-func TestFileSyncer_Save(t *testing.T) {
-	initTestData()
+func TestFileSyncer_m2json_Save(t *testing.T) {
+	initTestData("json")
 	formatter := m2json.Formatter{}
 	fs := m2obj.NewFileSyncer(filePath, formatter)
 	assert.Error(t, fs.Save())
@@ -68,24 +23,24 @@ func TestFileSyncer_Save(t *testing.T) {
 	assert.NoError(t, err)
 	fileObj, err := formatter.Unmarshal(fileBytes)
 	assert.NoError(t, err)
-	assert.Equal(t, obj.Staticize(), fileObj.Staticize())
+	assert.Equal(t, allNumbersToFloat64(allNumbersToFloat64(obj.Staticize())), allNumbersToFloat64(allNumbersToFloat64(fileObj.Staticize())))
 }
 
-func TestFileSyncer_Load(t *testing.T) {
-	initTestData()
-	t.Run("TestFileSyncer_Save", TestFileSyncer_Save)
+func TestFileSyncer_m2json_Load(t *testing.T) {
+	initTestData("json")
+	t.Run("TestFileSyncer_m2json_Save", TestFileSyncer_m2json_Save)
 	formatter := m2json.Formatter{}
 	fs := m2obj.NewFileSyncer(filePath, formatter)
 	assert.Error(t, fs.Load())
 	fs.BindObject(m2obj.New(m2obj.Group{}))
 	assert.NoError(t, fs.Load())
-	assert.Equal(t, obj.Staticize(), fs.GetBoundObject().Staticize())
+	assert.Equal(t, allNumbersToFloat64(obj.Staticize()), allNumbersToFloat64(fs.GetBoundObject().Staticize()))
 }
 
-func TestFileSyncer_AutoSave(t *testing.T) {
+func TestFileSyncer_m2json_AutoSave(t *testing.T) {
 	waitStartTime := 2 * time.Second
 	waitStopTime := 1 * time.Second
-	initTestData()
+	initTestData("json")
 	formatter := m2json.Formatter{}
 	fs := m2obj.NewFileSyncer(filePath, formatter)
 	checkObj := func(t *testing.T) {
@@ -93,7 +48,7 @@ func TestFileSyncer_AutoSave(t *testing.T) {
 		assert.NoError(t, err)
 		fileObj, err := formatter.Unmarshal(fileBytes)
 		assert.NoError(t, err)
-		assert.Equal(t, obj.Staticize(), fileObj.Staticize())
+		assert.Equal(t, allNumbersToFloat64(obj.Staticize()), allNumbersToFloat64(fileObj.Staticize()))
 	}
 	// init save
 	fs.AutoSaveTiming = 500
@@ -121,19 +76,19 @@ func TestFileSyncer_AutoSave(t *testing.T) {
 	t.Run("second save", checkObj)
 }
 
-func TestFileSyncer_AutoLoad(t *testing.T) {
+func TestFileSyncer_m2json_AutoLoad(t *testing.T) {
 	waitStartTime := 2 * time.Second
 	waitStopTime := 1 * time.Second
-	initTestData()
+	initTestData("json")
 	formatter := m2json.Formatter{}
 	fs := m2obj.NewFileSyncer(filePath, formatter)
 	fs.AutoSaveTiming = -1
 	obj2 := obj.Clone()
 	checkObjEqual := func(t *testing.T) {
-		assert.Equal(t, obj.Staticize(), obj2.Staticize())
+		assert.Equal(t, allNumbersToFloat64(obj.Staticize()), allNumbersToFloat64(obj2.Staticize()))
 	}
 	checkObjNotEqual := func(t *testing.T) {
-		assert.NotEqual(t, obj.Staticize(), obj2.Staticize())
+		assert.NotEqual(t, allNumbersToFloat64(obj.Staticize()), allNumbersToFloat64(obj2.Staticize()))
 	}
 	// first load
 	fs.BindObject(obj)
@@ -164,7 +119,7 @@ func TestFileSyncer_AutoLoad(t *testing.T) {
 		assert.NoError(t, expect.GroupMerge(m2obj.New(m2obj.Group{
 			"secondView": true,
 		}), true))
-		assert.Equal(t, expect.Staticize(), obj.Staticize())
+		assert.Equal(t, allNumbersToFloat64(expect.Staticize()), allNumbersToFloat64(obj.Staticize()))
 	})
 	// HardLoad
 	fs.HardLoad = true
@@ -173,12 +128,12 @@ func TestFileSyncer_AutoLoad(t *testing.T) {
 		expect := m2obj.New(m2obj.Group{
 			"secondView": true,
 		})
-		assert.Equal(t, expect.Staticize(), obj.Staticize())
+		assert.Equal(t, allNumbersToFloat64(expect.Staticize()), allNumbersToFloat64(obj.Staticize()))
 	})
 }
 
-func TestFileSyncer_BindObject(t *testing.T) {
-	initTestData()
+func TestFileSyncer_m2json_BindObject(t *testing.T) {
+	initTestData("json")
 	formatter := m2json.Formatter{}
 	fs := m2obj.NewFileSyncer(filePath, formatter)
 	obj2 := m2obj.New(m2obj.Group{
@@ -202,8 +157,8 @@ func TestFileSyncer_BindObject(t *testing.T) {
 	assert.Equal(t, obj2, fs.GetBoundObject())
 }
 
-func TestFileSyncer_GetSet(t *testing.T) {
-	initTestData()
+func TestFileSyncer_m2json_GetSet(t *testing.T) {
+	initTestData("json")
 	fs := m2obj.NewFileSyncer(filePath, m2json.Formatter{})
 	fs.BindObject(obj)
 	assert.NotPanics(t, func() {
@@ -214,8 +169,8 @@ func TestFileSyncer_GetSet(t *testing.T) {
 	})
 }
 
-func TestFileSyncer_AutoLoadOnChange(t *testing.T) {
-	initTestData()
+func TestFileSyncer_m2json_AutoLoadOnChange(t *testing.T) {
+	initTestData("json")
 	formatter := m2json.Formatter{}
 	fs := m2obj.NewFileSyncer(filePath, formatter)
 	getActualFileObj := func() (fileObj *m2obj.Object) {
@@ -226,7 +181,12 @@ func TestFileSyncer_AutoLoadOnChange(t *testing.T) {
 		return
 	}
 	checkObjsEqual := func() {
-		assert.Equal(t, obj.Staticize(), getActualFileObj().Staticize())
+		// ignore number type difference - all to allNumbersToFloat64(float64
+		assert.Equal(
+			t,
+			allNumbersToFloat64(obj.Staticize()),
+			allNumbersToFloat64(getActualFileObj().Staticize()),
+		)
 	}
 
 	fs.BindObject(obj)

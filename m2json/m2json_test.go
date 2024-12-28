@@ -1,2 +1,0 @@
-package m2json
-
